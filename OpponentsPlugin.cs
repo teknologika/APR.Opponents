@@ -81,29 +81,7 @@ namespace APR.OpponentsPlugin
             }
         }
 
-        public double SessionTime;
-        public SessionState CurrentSessionState;
-        public SessionState PreviousSessionState;
-        public long CurrentSessionID;
-        public long PreviousSessionID;
-        public double CurrentSessionTick;
-        public double PreviousSessionTick;
 
-        public string SessionType;
-
-       
-
-        /* iRacing Session states are
-        public enum SessionState {
-            Invalid,
-            GetInCar,
-            Warmup,
-            ParadeLaps,
-            Racing,
-            Checkered,
-            CoolDown
-        }
-        */
 
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
@@ -131,21 +109,13 @@ namespace APR.OpponentsPlugin
                     if (data?.NewData?.GetRawDataObject() is DataSampleEx) { irData = data.NewData.GetRawDataObject() as DataSampleEx; }
 
                     Session = new Session(ref data, ref irData);
+                    Session.GetSessionData();
 
                     // Setup timers
                     ClockTime = DateTime.Now.Ticks;
 
                     runEvery1Sec = ClockTime - endTime1Sec >= (long)every1sec;
                     runEvery5Sec = ClockTime - endTime5Sec >= (long)every5sec;
-
-                    // Get the iRacing Session Details
-                    SessionTime = irData.Telemetry.SessionTime;
-                    SessionType = irData.SessionData.WeekendInfo.EventType;
-                    CurrentSessionState = irData.Telemetry.SessionState;
-                    CurrentSessionID = irData.SessionData.WeekendInfo.SessionID;
-                    // Maybe iRacingData.Telemetry.SessionUniqueID is better here ??
-                    // TODO - handle if session changes and clear out the data with an event
-
 
                     if (frameCounter == 1) {
 

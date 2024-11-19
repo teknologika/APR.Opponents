@@ -109,6 +109,10 @@
   <ItemGroup>
     <Compile Include="Data\Session.cs" />
     <Compile Include="Models\Driver.cs" />
+    <Compile Include="Models\Laptime.cs" />
+    <Compile Include="Models\Sector.cs" />
+    <Compile Include="Models\TimeDelta.cs" />
+    <Compile Include="Models\Track.cs" />
     <Compile Include="OpponentsPlugin.cs" />
     <Compile Include="OpponentsSettings.cs" />
     <Compile Include="DemoDialogWindow.xaml.cs">

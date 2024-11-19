@@ -16,16 +16,21 @@ namespace APR.OpponentsPlugin.Models {
 
     internal class Driver {
 
+        public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
+       
         public bool? PitRequested { get; set; }
 
-        public long CarIdx { get; set; }   
+        public long CustId { get; set; }
 
-        public string Id { get { return CarIdx.ToString(); } }
+        public long CarIdx { get; set; }
+        
+        public int Id { get { return (int)CarIdx; } }
 
         public string Name { get; set; }
 
         public string TeamName { get; set; }
-
+        public long TeamId { get; set; }
+        
         public string ShortName { get; set; }
 
         public bool LapValid { get; set; } = true;
@@ -35,7 +40,11 @@ namespace APR.OpponentsPlugin.Models {
         public string ClubName { get; set; }
 
         public string LicenceString { get; set; }
+        public string LicenceColor { get; set; }
+        public float LicenseLevel { get; set; }
+        public float LicenceSubLevel { get; set; }
 
+   
         public string CarClassColor { get; set; }
 
         public string CarClassTextColor {
@@ -60,7 +69,22 @@ namespace APR.OpponentsPlugin.Models {
         public bool IsInGarage { get; set; } = false;
         public bool IsPlayer { get { return IsCameraCar; } }
         public bool IsSpectator { get; set; }
-        public bool IsPaceCar { get; set; }
+        public bool IsPaceCar {
+            get {
+                if (CustId == -1 && CarIdx == 0) {
+                    return true;
+                }
+                else {
+                    if (V8VetsSafetyCarNames.Contains(this.CarName)) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                }
+            }
+        }
+
         public bool IsCameraCar { get; set; }
 
         public float EstTime {  get; set; }
@@ -70,46 +94,50 @@ namespace APR.OpponentsPlugin.Models {
         public float RRM { get; set; }
 
         public int Position { get; set; }
-
         public int LivePosition { get; set; }
 
-        public int PositionInClass { get; set; }
-
+        public int ClassPosition { get; set; }
+        public int ClassLivePosition { get; set; }
+        
         public double[] Coordinates { get; set; }
 
         public string CarName { get; set; }
 
         public string CarClass { get; set; }
-
-
+        public long CarClassID { get; set; }
 
         public TimeSpan BestLapTime { get; set; }
 
         public TimeSpan LastLapTime { get; set; }
 
-        [Computed]
-        public double? DeltaToBest { get; set; }
+        //[Computed]
+        //public double? DeltaToBest { get; set; }
 
-        [Computed]
-        public double? DeltaToPlayer { get; set; }
+        //[Computed]
+        //public double? DeltaToPlayer { get; set; }
 
-        public double? IRacing_IRating { get; set; }
+        public float IRating { get; set; }
 
-        public double? TrackPositionPercent { get; set; }
+        public float TrackPositionPercent { get; set; }
 
-        public double? TrackPositionPercentRaw { get; set; }
-
-        public int? CurrentLap { get; set; }
+        public int CurrentLap { get; set; }
+        public int LapsComplete { get; set; }
+    
+        public float TotalLapDistance {
+            get { return CurrentLap + TrackPositionPercent; }
+        }
 
         public double? CurrentLapHighPrecision { get; set; }
 
         public string CarNumber { get; set; } = "";
 
         public double? GaptoLeader { get; set; }
-
         public double? GaptoClassLeader { get; set; }
 
-        public double? GaptoLeaderSimHub { get; internal set; }
+        public string DeltaToLeader { get; set; }
+        public string DeltaToPlayer { get; set; }
+        public string DeltaToNext { get; set; }
+
 
         public int? LapsToLeader { get; set; }
 
@@ -226,6 +254,9 @@ namespace APR.OpponentsPlugin.Models {
 
         public bool? P2PStatus { get; set; }
 
+        public Driver() {
+            Console.WriteLine("DANGER - DRIVER() Called !!");
+        }
 
         public Driver(ref GameData data, ref DataSampleEx irData, _Drivers irDriver) {
 
@@ -243,9 +274,9 @@ namespace APR.OpponentsPlugin.Models {
                 this.IsInGarage = irData.Telemetry.IsInGarage;
             }
 
-            this.IsPaceCar = Convert.ToBoolean(irDriver.IsPaceCar);
+            this.CarClassID = irDriver.CarClassID;
             this.CarClass = irDriver.CarClassShortName;
-            this.CarClassColor = irDriver.CarClassColor;
+            this.CarClassColor = ParseColor(irDriver.CarClassColor);
             this.CarIdx = irDriver.CarIdx;
             this.CarName = irDriver.CarScreenName;
             this.CarNumber = irDriver.CarNumber;
@@ -254,14 +285,34 @@ namespace APR.OpponentsPlugin.Models {
             this.TeamName = irDriver.TeamName;
 
             this._trackSurface = (int)irData.Telemetry.CarIdxTrackSurface[irDriver.CarIdx];
-            this.PositionInClass = (int)irData.Telemetry.CarIdxClassPosition[irDriver.CarIdx];
+            this.ClassPosition = (int)irData.Telemetry.CarIdxClassPosition[irDriver.CarIdx];
             this.Position = (int)irData.Telemetry.CarIdxPosition[irDriver.CarIdx];
             this.CurrentLap = (int)irData.Telemetry.CarIdxLap[irDriver.CarIdx];
+            this.LapsComplete = (int)irData.Telemetry.CarIdxLapCompleted[irDriver.CarIdx];
             this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
+            this.IRating = irDriver.IRating;
+            this.LicenceString = irDriver.LicString;
+            this.LicenceColor = ParseColor(irDriver.LicColor);
+            this.LicenseLevel = irDriver.LicLevel;
+            this.LicenceSubLevel = irDriver.LicSubLevel;
+            this.CustId = irDriver.UserID;
 
             this.EstTime = (float)irData.Telemetry.CarIdxEstTime[irDriver.CarIdx];
             this.F2Time = (float)irData.Telemetry.CarIdxF2Time[irDriver.CarIdx];
             this.Gear = (int)irData.Telemetry.CarIdxGear[irDriver.CarIdx];
+
+
+        }
+
+        public string ParseColor(string value) {
+            if (!string.IsNullOrWhiteSpace(value) && value.StartsWith("0x")) {
+                try {
+                    return value.Replace("0x", "#");
+                }
+                catch (Exception) {
+                }
+            }
+            return "#FFFFFFFF";
         }
     }
 }
