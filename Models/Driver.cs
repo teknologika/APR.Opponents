@@ -1,19 +1,26 @@
-﻿using GameReaderCommon;
+﻿using FMOD;
+using GameReaderCommon;
+using GameReaderCommon.Replays;
+using IRacingReader;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using static iRacingSDK.SessionData._DriverInfo;
 
 
 namespace APR.OpponentsPlugin.Models {
 
     internal class Driver {
-   
+
         public bool? PitRequested { get; set; }
 
-        public string Id { get; set; }
+        public long CarIdx { get; set; }   
+
+        public string Id { get { return CarIdx.ToString(); } }
 
         public string Name { get; set; }
 
@@ -31,15 +38,36 @@ namespace APR.OpponentsPlugin.Models {
 
         public string CarClassColor { get; set; }
 
-        public string CarClassTextColor { get; internal set; }
+        public string CarClassTextColor {
+            get {
+                if (!string.Equals(CarClassColor.ToLower(), "#ffffffff", StringComparison.Ordinal)) {
+                    return "#00000000";
+                }
+                else {
+                    return "#ffffffff";
+                }
+            }
+        }
 
-        public bool IsConnected { get; set; } = true;
+        private int _trackSurface;
+        
+        public bool IsConnected { get { return (_trackSurface > -1); } }
+        public bool IsOffTrack { get { return (_trackSurface == 0); } }
+        public bool IsInPitStall { get { return (_trackSurface == 1); } }
+        public bool IsInPitLane { get { return IsApproachingPits; } }
+        public bool IsApproachingPits { get { return (_trackSurface == 2); } }
+        public bool IsOnTrack { get { return (_trackSurface == 3); } }
+        public bool IsInGarage { get; set; } = false;
+        public bool IsPlayer { get { return IsCameraCar; } }
+        public bool IsSpectator { get; set; }
+        public bool IsPaceCar { get; set; }
+        public bool IsCameraCar { get; set; }
 
-        public bool? IsCarInGarage { get; set; }
-
-        public bool IsCarInPit { get; set; }
-
-        public bool IsCarInPitLane { get; set; }
+        public float EstTime {  get; set; }
+        public float F2Time { get; set; }
+        public int Gear { get; set; }
+        public float Speed { get; set; }
+        public float RRM { get; set; }
 
         public int Position { get; set; }
 
@@ -53,7 +81,7 @@ namespace APR.OpponentsPlugin.Models {
 
         public string CarClass { get; set; }
 
-        public bool IsPlayer { get; set; }
+
 
         public TimeSpan BestLapTime { get; set; }
 
@@ -76,8 +104,6 @@ namespace APR.OpponentsPlugin.Models {
         public double? CurrentLapHighPrecision { get; set; }
 
         public string CarNumber { get; set; } = "";
-
-        public double? Speed { get; set; }
 
         public double? GaptoLeader { get; set; }
 
@@ -199,5 +225,43 @@ namespace APR.OpponentsPlugin.Models {
         public int? P2PCount { get; set; }
 
         public bool? P2PStatus { get; set; }
+
+
+        public Driver(ref GameData data, ref DataSampleEx irData, _Drivers irDriver) {
+
+            // these values come straight from the driver
+
+            // if we are the camera car push in extra fun stuff
+            if (irData.Telemetry.CamCarIdx == irDriver.CarIdx) {
+                this.IsCameraCar = true;
+            }
+            else {
+                this.IsCameraCar = false;
+            }
+            this.IsSpectator = Convert.ToBoolean(irDriver.IsSpectator);
+            if (this.IsPlayer) {
+                this.IsInGarage = irData.Telemetry.IsInGarage;
+            }
+
+            this.IsPaceCar = Convert.ToBoolean(irDriver.IsPaceCar);
+            this.CarClass = irDriver.CarClassShortName;
+            this.CarClassColor = irDriver.CarClassColor;
+            this.CarIdx = irDriver.CarIdx;
+            this.CarName = irDriver.CarScreenName;
+            this.CarNumber = irDriver.CarNumber;
+            this.ClubName = irDriver.ClubName;
+            this.Name = irDriver.UserName;
+            this.TeamName = irDriver.TeamName;
+
+            this._trackSurface = (int)irData.Telemetry.CarIdxTrackSurface[irDriver.CarIdx];
+            this.PositionInClass = (int)irData.Telemetry.CarIdxClassPosition[irDriver.CarIdx];
+            this.Position = (int)irData.Telemetry.CarIdxPosition[irDriver.CarIdx];
+            this.CurrentLap = (int)irData.Telemetry.CarIdxLap[irDriver.CarIdx];
+            this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
+
+            this.EstTime = (float)irData.Telemetry.CarIdxEstTime[irDriver.CarIdx];
+            this.F2Time = (float)irData.Telemetry.CarIdxF2Time[irDriver.CarIdx];
+            this.Gear = (int)irData.Telemetry.CarIdxGear[irDriver.CarIdx];
+        }
     }
 }
