@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace APR.OpponentsPlugin.Models {
+namespace APR.SimhubPlugins.Models {
     internal class Sector {
         public int Number { get; set; }
         public float StartPercentage { get; set; }

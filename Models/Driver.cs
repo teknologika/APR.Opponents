@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using static iRacingSDK.SessionData._DriverInfo;
 
 
-namespace APR.OpponentsPlugin.Models {
+namespace APR.SimhubPlugins.Models {
 
     internal class Driver {
 

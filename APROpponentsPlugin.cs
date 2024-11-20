@@ -5,18 +5,16 @@ using System.Windows.Media;
 using iRacingSDK;
 using IRacingReader;
 using SimHub.Plugins.OutputPlugins.GraphicalDash.Behaviors.DoubleText.Imp;
-using APR.OpponentsPlugin.Data;
+using APR.SimhubPlugins.Data;
 using static iRacingSDK.SessionData._SessionInfo;
 using SimHub.Plugins.OutputPlugins.BeltTensionner;
-using APR.OpponentsPlugin.Models;
-
-namespace APR.OpponentsPlugin
-{
+using APR.SimhubPlugins.Models;
+ 
+namespace APR.SimhubPlugins {
     [PluginDescription("Extended iRacing Opponents")]
     [PluginAuthor("Bruce McLeod")]
     [PluginName("APR Opponents Plugin")]
-    public class OpponentsPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
-    {
+    public class APROpponentsPlugin : IPlugin, IDataPlugin, IWPFSettingsV2 {
         public OpponentsSettings Settings;
 
         /// <summary>
@@ -46,15 +44,15 @@ namespace APR.OpponentsPlugin
 
 
         DataSampleEx irData;
-        
-        
+
+
         /// <summary>
         /// Setup all the session timers to allow us to optomiste how things are called         
         /// </summary>
-    
+
         public int frameCounter = 0;
 
-        
+
         DateTime now;
         private long ClockTime;
 
@@ -82,8 +80,7 @@ namespace APR.OpponentsPlugin
             }
         }
 
-        public void DataUpdate(PluginManager pluginManager, ref GameData data)
-        {
+        public void DataUpdate(PluginManager pluginManager, ref GameData data) {
             // Use a frame counter to not update everything every frame
             // Simhub  runs this loop runs 60x per second
             frameCounter++;
@@ -100,10 +97,8 @@ namespace APR.OpponentsPlugin
             }
 
             // Define the value of our property (declared in init)
-            if (data.GameRunning)
-            {
-                if (data.OldData != null && data.NewData != null)
-                {
+            if (data.GameRunning) {
+                if (data.OldData != null && data.NewData != null) {
                     //Gaining access to raw data
                     if (data?.NewData?.GetRawDataObject() is DataSampleEx) { irData = data.NewData.GetRawDataObject() as DataSampleEx; }
 
@@ -142,8 +137,7 @@ namespace APR.OpponentsPlugin
                     }
 
                     // Trigger Speed Warning example
-                    if (data.OldData.SpeedKmh < Settings.SpeedWarningLevel && data.OldData.SpeedKmh >= Settings.SpeedWarningLevel)
-                    {
+                    if (data.OldData.SpeedKmh < Settings.SpeedWarningLevel && data.OldData.SpeedKmh >= Settings.SpeedWarningLevel) {
                         // Trigger an event
                         this.TriggerEvent("SpeedWarning");
                     }
@@ -156,8 +150,7 @@ namespace APR.OpponentsPlugin
         /// Plugins are rebuilt at game change
         /// </summary>
         /// <param name="pluginManager"></param>
-        public void End(PluginManager pluginManager)
-        {
+        public void End(PluginManager pluginManager) {
             // Save settings
             this.SaveCommonSettings("GeneralSettings", Settings);
         }
@@ -167,8 +160,7 @@ namespace APR.OpponentsPlugin
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns></returns>
-        public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
-        {
+        public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager) {
             return new OpponentsSettingsControl(this);
         }
 
@@ -177,8 +169,7 @@ namespace APR.OpponentsPlugin
         /// Plugins are rebuilt at game change
         /// </summary>
         /// <param name="pluginManager"></param>
-        public void Init(PluginManager pluginManager)
-        {
+        public void Init(PluginManager pluginManager) {
             SimHub.Logging.Current.Info("Starting plugin");
 
             // Load settings
@@ -191,26 +182,28 @@ namespace APR.OpponentsPlugin
             this.AddEvent("SpeedWarning");
 
             // Declare an action which can be called
-            this.AddAction("IncrementSpeedWarning",(a, b) =>
-            {
+            this.AddAction("IncrementSpeedWarning", (a, b) => {
                 Settings.SpeedWarningLevel++;
                 SimHub.Logging.Current.Info("Speed warning changed");
             });
 
             // Declare an action which can be called
-            this.AddAction("DecrementSpeedWarning", (a, b) =>
-            {
+            this.AddAction("DecrementSpeedWarning", (a, b) => {
                 Settings.SpeedWarningLevel--;
             });
 
             AddProperties();
 
+            AddProp("OverrideJavaScriptFunctions", true);
+            AddProp("GameIsSupported", true);
         }
-        
+
 
 
 
         private void AddProperties() {
+
+            this.AttachDelegate("GetPlayerLeaderboardPosition", () => Session.GetPlayerLeaderboardPosition());
 
             for (int i = 0; i < Settings.MAX_CARS; i++) {
                 AddProp($"Driver_LeaderboardPosition_{i:D2}", "0");
@@ -219,11 +212,11 @@ namespace APR.OpponentsPlugin
         }
 
         private void SetProperties(Session session) {
-            for (int i = 0;i < session.Drivers.Count;i++) {
+            for (int i = 0; i < session.Drivers.Count; i++) {
                 SetProp($"Driver_LeaderboardPosition_{i:D2}", session.Drivers[i].Position);
                 SetProp($"Driver_LivePosition_{i:D2}", session.Drivers[i].LivePosition);
             }
-            
+
         }
 
 

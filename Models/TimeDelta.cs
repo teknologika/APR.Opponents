@@ -68,7 +68,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace APR.OpponentsPlugin.Models {
+namespace APR.SimhubPlugins.Models {
     public class TimeDelta {
 
         private Single splitdistance = 20;

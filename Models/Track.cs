@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static iRacingSDK.SessionData;
 
-namespace APR.OpponentsPlugin.Models {
+namespace APR.SimhubPlugins.Models {
     internal class Track {
         private readonly List<Sector> _sectors;
 

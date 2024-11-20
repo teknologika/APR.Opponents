@@ -1,4 +1,4 @@
-﻿namespace APR.OpponentsPlugin
+﻿namespace APR.SimhubPlugins
 {
     /// <summary>
     /// Settings class, make sure it can be correctly serialized using JSON.net

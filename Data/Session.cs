@@ -9,12 +9,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
-using APR.OpponentsPlugin.Models;
+using APR.SimhubPlugins.Models;
 
 using static iRacingSDK.SessionData._DriverInfo;
 using System.Globalization;
 
-namespace APR.OpponentsPlugin.Data {
+namespace APR.SimhubPlugins.Data {
     internal class Session : IDisposable {
 
         
@@ -91,8 +91,8 @@ namespace APR.OpponentsPlugin.Data {
 
 
            // Description = iRacingData.Telemetry.Session.SessionType;
-            CameraCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx);
-            //PlayerCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.pl);
+           CameraCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx);
+           //PlayerCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.pl);
 
             iRCompetitors = iRacingData.SessionData.DriverInfo.CompetingDrivers;
             iRDrivers = iRacingData.SessionData.DriverInfo.Drivers;
@@ -103,6 +103,7 @@ namespace APR.OpponentsPlugin.Data {
             }
 
             CalculateLivePositions();
+
             UpdateTimeDelta();
 
             // Get the competitors and create the Drivers
@@ -165,6 +166,12 @@ namespace APR.OpponentsPlugin.Data {
             //if (this.Leader != null && this.Leader.CurrentResults != null)
             if (this.Leader != null )
                 LeaderLap = Leader.LapsComplete + 1;
+        }
+
+        // Matches simhub getplayerleaderboardposition()
+        // But we return cameracar Idx not the player :-)
+        public int GetPlayerLeaderboardPosition() {
+            return  iRacingData.Telemetry.CarIdxPosition[iRacingData.Telemetry.CamCarIdx];
         }
 
         private void UpdateTimeDelta() {

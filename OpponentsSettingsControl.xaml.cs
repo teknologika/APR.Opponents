@@ -1,20 +1,20 @@
 ﻿using SimHub.Plugins.Styles;
 using System.Windows.Controls;
 
-namespace APR.OpponentsPlugin {
+namespace APR.SimhubPlugins {
     /// <summary>
     /// Interaction logic for OpponentsSettingsControl.xaml
     /// </summary>
     public partial class OpponentsSettingsControl : UserControl
     {
-        public OpponentsPlugin Plugin { get; }
+        public APROpponentsPlugin Plugin { get; }
 
         public OpponentsSettingsControl()
         {
             InitializeComponent();
         }
 
-        public OpponentsSettingsControl(OpponentsPlugin plugin) : this()
+        public OpponentsSettingsControl(APROpponentsPlugin plugin) : this()
         {
             this.Plugin = plugin;
         }
