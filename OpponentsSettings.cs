@@ -6,5 +6,6 @@
     public class OpponentsSettings
     {
         public int SpeedWarningLevel = 100;
+        public int MAX_CARS = 64;
     }
 }

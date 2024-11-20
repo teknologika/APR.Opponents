@@ -8,6 +8,7 @@ using SimHub.Plugins.OutputPlugins.GraphicalDash.Behaviors.DoubleText.Imp;
 using APR.OpponentsPlugin.Data;
 using static iRacingSDK.SessionData._SessionInfo;
 using SimHub.Plugins.OutputPlugins.BeltTensionner;
+using APR.OpponentsPlugin.Models;
 
 namespace APR.OpponentsPlugin
 {
@@ -81,8 +82,6 @@ namespace APR.OpponentsPlugin
             }
         }
 
-
-
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             // Use a frame counter to not update everything every frame
@@ -139,15 +138,8 @@ namespace APR.OpponentsPlugin
                         }
 
                         Session.GetGameData();
+                        SetProperties(Session);
                     }
-
-                    
-
-
-
-
-
-
 
                     // Trigger Speed Warning example
                     if (data.OldData.SpeedKmh < Settings.SpeedWarningLevel && data.OldData.SpeedKmh >= Settings.SpeedWarningLevel)
@@ -210,6 +202,49 @@ namespace APR.OpponentsPlugin
             {
                 Settings.SpeedWarningLevel--;
             });
+
+            AddProperties();
+
         }
+        
+
+
+
+        private void AddProperties() {
+
+            for (int i = 0; i < Settings.MAX_CARS; i++) {
+                AddProp($"Driver_LeaderboardPosition_{i:D2}", "0");
+                AddProp($"Driver_LivePosition_{i:D2}", "0");
+            }
+        }
+
+        private void SetProperties(Session session) {
+            for (int i = 0;i < session.Drivers.Count;i++) {
+                SetProp($"Driver_LeaderboardPosition_{i:D2}", session.Drivers[i].Position);
+                SetProp($"Driver_LivePosition_{i:D2}", session.Drivers[i].LivePosition);
+            }
+            
+        }
+
+
+
+
+        // Helper functions to deal with SimhubProperties
+        public void AddProp(string PropertyName, dynamic defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
+        public void AddProp(string PropertyName) => PluginManager.AddProperty(PropertyName, GetType(), "");
+
+        public void SetProp(string PropertyName, dynamic value) => PluginManager.SetPropertyValue(PropertyName, GetType(), value);
+        public dynamic GetProp(string PropertyName) => PluginManager.GetPropertyValue(PropertyName);
+        public bool HasProp(string PropertyName) => PluginManager.GetAllPropertiesNames().Contains(PropertyName);
+        public void AddEvent(string EventName) => PluginManager.AddEvent(EventName, GetType());
+        public void TriggerEvent(string EventName) => PluginManager.TriggerEvent(EventName, GetType());
+        public void AddAction(string ActionName, Action<PluginManager, string> ActionBody)
+            => PluginManager.AddAction(ActionName, GetType(), ActionBody);
+
+        public void TriggerAction(string ActionName) => PluginManager.TriggerAction(ActionName);
+
+
+        // Function for easy debuggung
+        public static void DebugMessage(string s) => SimHub.Logging.Current.Info((object)s);
     }
 }

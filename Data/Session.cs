@@ -17,6 +17,8 @@ using System.Globalization;
 namespace APR.OpponentsPlugin.Data {
     internal class Session : IDisposable {
 
+        
+
         public double SessionTime;
         public SessionState CurrentSessionState;
         public SessionState PreviousSessionState;
@@ -63,7 +65,7 @@ namespace APR.OpponentsPlugin.Data {
 
         _Drivers[] iRCompetitors;
         _Drivers[] iRDrivers;
-        List<Driver> Drivers = new List<Driver>();
+        public List<Driver> Drivers = new List<Driver>();
 
         public string Description;
 
@@ -114,9 +116,6 @@ namespace APR.OpponentsPlugin.Data {
             //CurrentSessionState = iRacingData.Telemetry.SessionState;
             //CurrentSessionID = iRacingData.SessionData.WeekendInfo.SessionID;
         }
-
-        
-
 
         private void CalculateLivePositions() {
             // In a race that is not yet in checkered flag mode,
