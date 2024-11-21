@@ -9,7 +9,8 @@ using APR.SimhubPlugins.Data;
 using static iRacingSDK.SessionData._SessionInfo;
 using SimHub.Plugins.OutputPlugins.BeltTensionner;
 using APR.SimhubPlugins.Models;
- 
+using System.Linq;
+
 namespace APR.SimhubPlugins {
     [PluginDescription("Extended iRacing Opponents")]
     [PluginAuthor("Bruce McLeod")]
@@ -203,18 +204,39 @@ namespace APR.SimhubPlugins {
 
         private void AddProperties() {
 
-            this.AttachDelegate("GetPlayerLeaderboardPosition", () => Session.GetPlayerLeaderboardPosition());
+
+
 
             for (int i = 0; i < Settings.MAX_CARS; i++) {
-                AddProp($"Driver_LeaderboardPosition_{i:D2}", "0");
-                AddProp($"Driver_LivePosition_{i:D2}", "0");
+                // AddProp($"Driver_LeaderboardPosition_{i:D2}", "0");
+                // AddProp($"Driver_LivePosition_{i:D2}", "0");
             }
         }
 
         private void SetProperties(Session session) {
-            for (int i = 0; i < session.Drivers.Count; i++) {
-                SetProp($"Driver_LeaderboardPosition_{i:D2}", session.Drivers[i].Position);
-                SetProp($"Driver_LivePosition_{i:D2}", session.Drivers[i].LivePosition);
+
+            this.AttachDelegate("GetPlayerLeaderboardPosition", () => Session.GetPlayerLeaderboardPosition());
+            this.AttachDelegate("GetPlayerClassLeaderboardPosition", () => Session.GetPlayerClassLeaderboardPosition());
+
+            var DriversByPosition = session.Drivers.Where(
+                a => a.CarName != "" &&
+                ( a.IsOnTrack || a.IsInPitLane || a.IsInPitStall ) &&
+                a.IsConnected &&
+                !a.IsPaceCar &&
+                !a.IsSpectator)
+
+                .OrderBy(x => x.Position)
+                .ThenBy(x => x.CarIdx)
+                .ToList();
+
+            int i = 1;
+            foreach (var item in DriversByPosition) {
+                this.AttachDelegate($"Driver_{i:D2}_LeaderboardPosition", () => item.Position);
+                this.AttachDelegate($"Driver_{i:D2}_LeaderboardName", () => item.Name);
+                this.AttachDelegate($"Driver_{i:D2}_GapToPlayer", () => item.GapToPlayer);
+                this.AttachDelegate($"Driver_{i:D2}_GapToLeader", () => item.GapToLeader);
+                this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToNext);
+                i++;
             }
 
         }

@@ -59,13 +59,31 @@ namespace APR.SimhubPlugins.Data {
         DataSampleEx iRacingData;
         GameData data;
 
-        _Drivers CameraCar = null;
+        _Drivers iRCameraCar = null;
         Driver Leader = null;
+        Driver CameraCar = null;
         int LeaderLap = 0;
 
         _Drivers[] iRCompetitors;
         _Drivers[] iRDrivers;
+
         public List<Driver> Drivers = new List<Driver>();
+        public List<CarClass> CarClasses = new List<CarClass>();
+        public Relatives Relative = new Relatives();
+
+
+        internal void CheckAndAddCarClass(long CarClassID, string CarClassShortName, string CarClassColor, string CarClassTextColor) {
+            bool has = this.CarClasses.Any(a => a.carClassID == CarClassID);
+
+            if (has == false && CarClassID != 0) {
+                this.CarClasses.Add(new CarClass() {
+                    carClassID = CarClassID,
+                    carClassShortName = CarClassShortName,
+                    carClassColor = CarClassColor,
+                    carClassTextColor = CarClassTextColor
+                });
+            }
+        }
 
         public string Description;
 
@@ -83,7 +101,6 @@ namespace APR.SimhubPlugins.Data {
             _track = Track.FromSessionInfo(iRacingData.SessionData.WeekendInfo,iRacingData.SessionData.SplitTimeInfo);
             _timeDelta = new TimeDelta((float)_track.Length * 1000f, 20, 64);
 
-
         }
 
         public void GetGameData() {
@@ -91,31 +108,25 @@ namespace APR.SimhubPlugins.Data {
 
 
            // Description = iRacingData.Telemetry.Session.SessionType;
-           CameraCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx);
-           //PlayerCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.pl);
+           iRCameraCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx);
+           
+            //PlayerCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.pl);
 
             iRCompetitors = iRacingData.SessionData.DriverInfo.CompetingDrivers;
             iRDrivers = iRacingData.SessionData.DriverInfo.Drivers;
-
+           
             foreach (_Drivers competitor in iRCompetitors) {
                 var newDriver = new Driver(ref data, ref iRacingData, competitor);
                 Drivers.Add(newDriver);
+                CheckAndAddCarClass(newDriver.CarClassID, newDriver.CarClass, newDriver.CarClassColor, newDriver.CarClassTextColor);
             }
 
+            CameraCar = new Driver(ref data, ref iRacingData, iRCameraCar);
             CalculateLivePositions();
 
             UpdateTimeDelta();
+            Relative.Update(Drivers, CameraCar);
 
-            // Get the competitors and create the Drivers
-
-            // Get the opponents and update the Drivers
-
-
-
-            //SessionTime = iRacingData.Telemetry.SessionTime;
-            //SessionType = iRacingData.Telemetry.Session.SessionType;
-            //CurrentSessionState = iRacingData.Telemetry.SessionState;
-            //CurrentSessionID = iRacingData.SessionData.WeekendInfo.SessionID;
         }
 
         private void CalculateLivePositions() {
@@ -174,6 +185,12 @@ namespace APR.SimhubPlugins.Data {
             return  iRacingData.Telemetry.CarIdxPosition[iRacingData.Telemetry.CamCarIdx];
         }
 
+        // Matches simhub getplayerleaderboardposition()
+        // But we return cameracar Idx not the player :-)
+        public int GetPlayerClassLeaderboardPosition() {
+            return iRacingData.Telemetry.CarIdxClassPosition[iRacingData.Telemetry.CamCarIdx];
+        }
+
         private void UpdateTimeDelta() {
             if (_timeDelta == null) return;
 
@@ -181,13 +198,22 @@ namespace APR.SimhubPlugins.Data {
             _timeDelta.Update(SessionTime, iRacingData.Telemetry.CarIdxLapDistPct);
 
             // Order drivers by live position
-            var drivers = Drivers.OrderBy(d => d.LivePosition).ToList();
+            var drivers = Drivers
+                .Where(x => (
+                    !String.IsNullOrEmpty(x.Name) &&
+                    x.TotalLapDistance > 0 
+                ))
+                .OrderBy(d => d.TotalLapDistance).ToList();
+            
+            
+            
+            
             if (drivers.Count > 0) {
                 
                 // Get leader
                 var leader = drivers[0];
-                Leader.DeltaToLeader = "-";
-                Leader.DeltaToNext = "-";
+                Leader.GapToLeader = "-";
+                Leader.GapToNext = "-";
                 
                 // Loop through drivers
                 for (int i = 1; i < drivers.Count; i++) {
@@ -200,18 +226,18 @@ namespace APR.SimhubPlugins.Data {
 
                     if (leaderLapDiff < 1) {
                         var leaderDelta = _timeDelta.GetDelta(behind.Id, Leader.Id);
-                        behind.DeltaToLeader = TimeDelta.DeltaToString(leaderDelta);
+                        behind.GapToLeader = TimeDelta.DeltaToString(leaderDelta);
                     }
                     else {
-                        behind.DeltaToLeader = Math.Floor(leaderLapDiff) + " L";
+                        behind.GapToLeader = Math.Floor(leaderLapDiff) + " L";
                     }
 
                     if (nextLapDiff < 1) {
                         var nextDelta = _timeDelta.GetDelta(behind.Id, ahead.Id);
-                        behind.DeltaToNext = TimeDelta.DeltaToString(nextDelta);
+                        behind.GapToNext = TimeDelta.DeltaToString(nextDelta);
                     }
                     else {
-                        behind.DeltaToNext = Math.Floor(nextLapDiff) + " L";
+                        behind.GapToNext = Math.Floor(nextLapDiff) + " L";
                     }
                 }
             }
