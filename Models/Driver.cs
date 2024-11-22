@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using static iRacingSDK.SessionData._DriverInfo;
 
 
@@ -240,7 +241,20 @@ namespace APR.SimhubPlugins.Models {
         public string CarNumber { get; set; } = "";
 
         public string GapToLeader { get; set; } = "-.--";
-        public string GapToPlayer { get; set; } = "-.--";
+        private string _gapToPlayer = "-.--";
+        public string GapToPlayer {
+            get {
+                if (Convert.ToDouble(_gapToPlayer) > 0.0) {
+                    return "+" + _gapToPlayer;
+                }
+                else {
+                    return _gapToPlayer;
+                }
+            }
+            set {
+                _gapToPlayer = value;
+            }
+        } 
         public string GapToNext { get; set; } = "-.--";
 
         public int? LapsToLeader { get; set; }
