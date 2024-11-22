@@ -13,6 +13,7 @@ using APR.SimhubPlugins.Models;
 
 using static iRacingSDK.SessionData._DriverInfo;
 using System.Globalization;
+using System.Runtime;
 
 namespace APR.SimhubPlugins.Data {
     internal class Session : IDisposable {
@@ -34,14 +35,6 @@ namespace APR.SimhubPlugins.Data {
         private Track _track;
 
 
-
-        public bool IsCheckered {
-            get {
-                return CurrentSessionState == SessionState.Checkered;
-            }
-        }
-
-
         /* iRacing Session states are
         public enum SessionState {
             Invalid,
@@ -53,6 +46,14 @@ namespace APR.SimhubPlugins.Data {
             CoolDown
         }
         */
+        public bool IsCheckered {
+            get {
+                return CurrentSessionState == SessionState.Checkered;
+            }
+        }
+
+
+        
 
 
 
@@ -68,16 +69,53 @@ namespace APR.SimhubPlugins.Data {
         _Drivers[] iRDrivers;
 
         public List<Driver> Drivers = new List<Driver>();
+        private List<Driver> _driversAhead = new List<Driver>();
+        private List<Driver> _Behind = new List<Driver>();
+
+        /*
+        public List<Driver> DriversAhead {
+            get {
+                // if the distance is negative they are ahead
+                return Driver.FindAll(a => a.LapDistSpectatedCar < 0 && a.IsConnected).OrderByDescending(a => a.LapDistSpectatedCar).ToList();
+            }
+            set {
+                if (Settings.RelativeShowCarsInPits) {
+                    _opponentsAhead = value.FindAll(a => (!a.IsCarInPitLane || !a.IsCarInPitBox || !a.IsCarInGarage));
+                }
+                else {
+                    _opponentsAhead = value;
+                }
+            }
+        }
+        
+
+        public List<ExtendedOpponent> OpponentsBehind {
+            get {
+                // if the distance is positive they are ahead
+                return OpponentsExtended.FindAll(a => a.LapDistSpectatedCar > 0 && a.IsConnected).OrderBy(a => a.LapDistSpectatedCar).ToList();
+            }
+            set {
+                if (Settings.RelativeShowCarsInPits) {
+                    _opponentsBehind = value.FindAll(a => (!a.IsCarInPitLane || !a.IsCarInPitBox || !a.IsCarInGarage));
+                }
+                else {
+                    _opponentsBehind = value;
+                }
+            }
+        }
+
+        */
+
         public List<CarClass> CarClasses = new List<CarClass>();
         public Relatives Relative = new Relatives();
 
 
         internal void CheckAndAddCarClass(long CarClassID, string CarClassShortName, string CarClassColor, string CarClassTextColor) {
-            bool has = this.CarClasses.Any(a => a.carClassID == CarClassID);
+            bool has = this.CarClasses.Any(a => a.CarClassID == CarClassID);
 
             if (has == false && CarClassID != 0) {
                 this.CarClasses.Add(new CarClass() {
-                    carClassID = CarClassID,
+                    CarClassID = CarClassID,
                     carClassShortName = CarClassShortName,
                     carClassColor = CarClassColor,
                     carClassTextColor = CarClassTextColor
@@ -105,27 +143,42 @@ namespace APR.SimhubPlugins.Data {
 
         public void GetGameData() {
 
-
-
-           // Description = iRacingData.Telemetry.Session.SessionType;
-           iRCameraCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx);
-           
-            //PlayerCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.pl);
+            // Get the current camera car. This will be the player or car being observed
+            iRCameraCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx);
+            CameraCar = new Driver(ref data, ref iRacingData, iRCameraCar);
 
             iRCompetitors = iRacingData.SessionData.DriverInfo.CompetingDrivers;
             iRDrivers = iRacingData.SessionData.DriverInfo.Drivers;
            
+            // Update the car classes
             foreach (_Drivers competitor in iRCompetitors) {
                 var newDriver = new Driver(ref data, ref iRacingData, competitor);
                 Drivers.Add(newDriver);
                 CheckAndAddCarClass(newDriver.CarClassID, newDriver.CarClass, newDriver.CarClassColor, newDriver.CarClassTextColor);
             }
 
-            CameraCar = new Driver(ref data, ref iRacingData, iRCameraCar);
-            CalculateLivePositions();
+            // Update the reference lap time for each class
+            foreach (var item in CarClasses)
+            {
+                item.UpdateReferenceClassLaptime(Drivers);
+            }
 
+            var bob = Leader;
+
+            // Find the overall leader for each class and update their total time
+            foreach (var item in CarClasses) {
+                List<Driver> classbyPosition = Drivers.FindAll(a => a.CarClassID == item.CarClassID && !a.IsSpectator).OrderBy(a => a.Position).ToList();
+
+                Driver classLeader = classbyPosition[0];
+                item.LeaderTotalTime = (classLeader.CurrentLap * item.ReferenceLapTime) + (item.ReferenceLapTime * classLeader.TrackPositionPercent);
+            }
+
+            CalculateLivePositions();
+            
             UpdateTimeDelta();
-            Relative.Update(Drivers, CameraCar);
+            Relative.Update(ref Drivers, CameraCar);
+
+            
 
         }
 

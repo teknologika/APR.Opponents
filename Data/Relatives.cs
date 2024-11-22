@@ -1,4 +1,5 @@
 ﻿using APR.SimhubPlugins.Models;
+using MahApps.Metro.Controls;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,8 +15,7 @@ namespace APR.SimhubPlugins.Data {
         public List<Driver> Ahead = new List<Driver>();
         public List<Driver> Behind = new List<Driver>();
 
-
-        public void Update(List<Driver> drivers, Driver CameraCar) {
+        public void Update(ref List<Driver> drivers, Driver CameraCar) {
             Clear();
 
             List<Driver> sortedDrivers = drivers
@@ -45,16 +45,18 @@ namespace APR.SimhubPlugins.Data {
             // technically we are on a loop so no one is in front or behind, so we take half the cars
             // and mark them in front, and half marked as behind.
             // we do this by adding or subtracting g_sessionObj.DriverInfo.DriverCarEstLapTime from time
-
             foreach (var item in _relativeTable.Get()) {
-                var car = drivers.Find(a => a.CarIdx == item.carIdx);
+                var car = drivers.Find(a => a.CarIdx == item.CarIdx);
 
                 double refLapTime;
+                // If we have the iRacing EstTime, use it
                 if (car.EstTime > 0) {
                     refLapTime = car.EstTime;
                 }
                 else {
-                    refLapTime = GetReferenceClassLaptime(drivers, car.CarClassID);
+                    // Need to check this calc of our own EstTime
+                    refLapTime = car.ClassReferenceLapTime.TotalSeconds * car.TrackPositionPercent;
+                    //refLapTime = car.car GetReferenceClassLaptime(drivers, car.CarClassID);
                 }
 
                 // if the gap is more than 50 of a lap ahead, they are actually behind
@@ -73,41 +75,14 @@ namespace APR.SimhubPlugins.Data {
                     item.sortingRelativeGapToSpectator = item.simpleRelativeGapToSpectator;
                 }
             }
-        }
 
-        private double GetReferenceClassLaptime(List<Driver> drivers, long CarClassID) {
-            List<Driver> driversInClass = drivers.FindAll(a => a.CarClassID == CarClassID);
-
-            double averageLapTime = 0;
-            int count = 0;
-            foreach (var item in driversInClass) {
-                double LastLapTimeSeconds = item.LastLapTime.TotalSeconds;
-                double BestLapTimeSeconds = item.BestLapTime.TotalSeconds;
-
-                // use the  last lap time
-                if (LastLapTimeSeconds > 0 &&
-                        (LastLapTimeSeconds < (LastLapTimeSeconds * 1.05)) &&
-                        (LastLapTimeSeconds > (LastLapTimeSeconds * 0.95))) {
-                    averageLapTime += LastLapTimeSeconds;
-                    count++;
-                }
-                // if the last lap time is empty, try and use the best
-                else if (BestLapTimeSeconds > 0 &&
-                        (BestLapTimeSeconds < (BestLapTimeSeconds * 1.05)) &&
-                        (BestLapTimeSeconds > (BestLapTimeSeconds * 0.95))) {
-                    averageLapTime += BestLapTimeSeconds;
-                    count++;
-
-                }
+            foreach (var rel in _relativeTable.Get()) {
+                Driver dvr = drivers.Find(x => x.CarIdx == rel.CarIdx);
+                dvr.GapToPlayer = rel.RelativeGapString;
             }
-            if (count > 0) {
-                averageLapTime = averageLapTime / count;
-            }
-            // if no time, just use 2 mins
-            if (averageLapTime == 0) {
-                return 120.0;
-            }
-            return averageLapTime;
+
+
+           
         }
 
         public void Clear() {
@@ -160,7 +135,7 @@ namespace APR.SimhubPlugins.Data {
 
         private string DetermineColor(int i, int playerCarIdx, int lap, int playerLap, bool pitRoad) {
             if (i == playerCarIdx) {
-                return "#FFB923"; // Player car color
+                return "#FFB923"; // Player car DriverNameColor
             }
             else if (lap > playerLap) {
                 return pitRoad ? "#7F1818" : "#FE3030"; // Lapping you
@@ -175,7 +150,7 @@ namespace APR.SimhubPlugins.Data {
 
     }
     public class RelativeTable {
-        private static List<RelativePosition> _relativePositions = new List<RelativePosition>();
+        public static List<RelativePosition> _relativePositions = new List<RelativePosition>();
 
         public void Clear() {
             _relativePositions.Clear();
@@ -185,16 +160,20 @@ namespace APR.SimhubPlugins.Data {
             return _relativePositions;
         }
 
+        public RelativePosition Get(long carIdx) {
+            return _relativePositions.Find(x => x.CarIdx == carIdx) ?? new RelativePosition();
+        }
+
 
         public void Add(long carIdx, int racePos, string carNumberString, string nameStr, double simpleRelativeGapToSpectator, int aheadBehind) {
 
             _relativePositions.Add(new RelativePosition() {
-                carIdx = carIdx,
-                racePosition = racePos,
-                carNumberString = carNumberString,
-                nameStr = nameStr,
+                CarIdx = carIdx,
+                RacePosition = racePos,
+                CarNumberString = carNumberString,
+                DriverName = nameStr,
                 simpleRelativeGapToSpectator = simpleRelativeGapToSpectator,
-                aheadBehind = aheadBehind
+                AheadOrBehind = aheadBehind
             });
         }
 
@@ -202,24 +181,25 @@ namespace APR.SimhubPlugins.Data {
     }
 
     public class RelativePosition {
-        public long carIdx;
-        public int racePosition;
-        public string carNumberString;
+        public long CarIdx;
+        public int RacePosition;
+        public string CarNumberString;
         public double sortingRelativeGapToSpectator;
         public double simpleRelativeGapToSpectator;
-        public string simpleRelativeGapToSpectatorString {
+        public string RelativeGapString {
             get {
                 return simpleRelativeGapToSpectator.ToString($"0.0");
             }
         }
 
-        public string nameStr;
-        public string relGapStr;
-        public string color;
-        public int aheadBehind; // 1 = ahead, 0 = ignore, -1 = behind
+        public string DriverName;
+        public string DriverNameColor;
+        //public string RelativeGapString;
+        
+        public int AheadOrBehind; // 1 = ahead, 0 = ignore, -1 = behind
 
         public override string ToString() {
-            return $"{nameStr} p: {racePosition} {relGapStr}";
+            return $"{DriverName} p: {RacePosition} {RelativeGapString}";
         }
     }
 }

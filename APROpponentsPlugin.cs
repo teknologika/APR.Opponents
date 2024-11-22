@@ -94,6 +94,7 @@ namespace APR.SimhubPlugins {
 
             // This plugin only Supports iRacing
             if (data.GameName != "IRacing") {
+                SetProp("GameIsSupported", false);
                 return;
             }
 
@@ -138,7 +139,7 @@ namespace APR.SimhubPlugins {
                     }
 
                     // Trigger Speed Warning example
-                    if (data.OldData.SpeedKmh < Settings.SpeedWarningLevel && data.OldData.SpeedKmh >= Settings.SpeedWarningLevel) {
+                    if (data.OldData.SpeedKmh < Settings.LowFuelWarningLevel && data.OldData.SpeedKmh >= Settings.LowFuelWarningLevel) {
                         // Trigger an event
                         this.TriggerEvent("SpeedWarning");
                     }
@@ -180,37 +181,28 @@ namespace APR.SimhubPlugins {
             this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
 
             // Declare an event
-            this.AddEvent("SpeedWarning");
+            this.AddEvent("LowFuelWarning");
 
             // Declare an action which can be called
-            this.AddAction("IncrementSpeedWarning", (a, b) => {
-                Settings.SpeedWarningLevel++;
-                SimHub.Logging.Current.Info("Speed warning changed");
+            this.AddAction("IncrementLowFuelWarning", (a, b) => {
+                Settings.LowFuelWarningLevel++;
+                SimHub.Logging.Current.Info("LowFuel warning changed");
             });
 
             // Declare an action which can be called
-            this.AddAction("DecrementSpeedWarning", (a, b) => {
-                Settings.SpeedWarningLevel--;
+            this.AddAction("LowFuelWarning", (a, b) => {
+                Settings.LowFuelWarningLevel--;
             });
 
             AddProperties();
-
-            AddProp("OverrideJavaScriptFunctions", true);
-            AddProp("GameIsSupported", true);
         }
 
 
 
 
         private void AddProperties() {
-
-
-
-
-            for (int i = 0; i < Settings.MAX_CARS; i++) {
-                // AddProp($"Driver_LeaderboardPosition_{i:D2}", "0");
-                // AddProp($"Driver_LivePosition_{i:D2}", "0");
-            }
+            AddProp("OverrideJavaScriptFunctions", Settings.OverrideJavaScriptFunctions);
+            AddProp("GameIsSupported", true);
         }
 
         private void SetProperties(Session session) {
@@ -218,6 +210,7 @@ namespace APR.SimhubPlugins {
             this.AttachDelegate("GetPlayerLeaderboardPosition", () => Session.GetPlayerLeaderboardPosition());
             this.AttachDelegate("GetPlayerClassLeaderboardPosition", () => Session.GetPlayerClassLeaderboardPosition());
 
+            // Properties sorted by Position
             var DriversByPosition = session.Drivers.Where(
                 a => a.CarName != "" &&
                 ( a.IsOnTrack || a.IsInPitLane || a.IsInPitStall ) &&
@@ -238,6 +231,16 @@ namespace APR.SimhubPlugins {
                 this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToNext);
                 i++;
             }
+
+            // TODO: The above for each class
+
+            // Relative properties
+
+
+            // Cars in pitlane
+
+
+
 
         }
 

@@ -17,7 +17,7 @@ namespace APR.SimhubPlugins.Models {
     internal class Driver {
 
         public override string ToString() {
-            return $"P: {Position} LP:{LivePosition} TLD:{TotalLapDistance} {Name} GL: {GapToLeader} GN: {GapToNext}"; 
+            return $"P: {Position} LP:{LivePosition} TLD:{TotalLapDistance} {Name} GP: {GapToPlayer} GL: {GapToLeader} GN: {GapToNext}"; 
         }
 
         public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
@@ -212,6 +212,7 @@ namespace APR.SimhubPlugins.Models {
 
         public int ClassPosition { get; set; }
         public int ClassLivePosition { get; set; }
+        
      
         public string CarName { get; set; }
 
@@ -220,11 +221,12 @@ namespace APR.SimhubPlugins.Models {
 
         public TimeSpan BestLapTime { get; set; }
         public TimeSpan LastLapTime { get; set; }
-
+        public TimeSpan ClassReferenceLapTime { get; set; }
 
         public float IRating { get; set; }
 
         public float TrackPositionPercent { get; set; }
+        public double LapDistSpectatedCar { get; set; }
 
         public int CurrentLap { get; set; }
         public int LapsComplete { get; set; }
@@ -233,22 +235,14 @@ namespace APR.SimhubPlugins.Models {
             get {
                 var value = CurrentLap + TrackPositionPercent;
                 return value;
-                /*
-                if (value < 0) {
-                    return 0;
-                }
-                else {
-                    return value;
-                }
-                */
             }
         }
 
         public string CarNumber { get; set; } = "";
 
-        public string GapToLeader { get; set; }
-        public string GapToPlayer { get; set; }
-        public string GapToNext { get; set; }
+        public string GapToLeader { get; set; } = "-.--";
+        public string GapToPlayer { get; set; } = "-.--";
+        public string GapToNext { get; set; } = "-.--";
 
         public int? LapsToLeader { get; set; }
         public int? LapsToClassLeader { get; set; }
@@ -318,6 +312,20 @@ namespace APR.SimhubPlugins.Models {
             this.CurrentLap = (int)irData.Telemetry.CarIdxLap[irDriver.CarIdx];
             this.LapsComplete = (int)irData.Telemetry.CarIdxLapCompleted[irDriver.CarIdx];
             this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
+            
+            double cameraCarLapDistPct = (float)irData.Telemetry.CarIdxLapDistPct[irData.Telemetry.CamCarIdx];
+            Track track = Track.FromSessionInfo(irData.SessionData.WeekendInfo, irData.SessionData.SplitTimeInfo);
+       
+            var distance = (cameraCarLapDistPct * track.Length) - (TrackPositionPercent * track.Length);
+            // calculate the difference between the two cars
+            if (distance > track.Length / 2) {
+                distance -= track.Length;
+            }
+            else if (distance < -track.Length / 2) {
+                distance += track.Length;
+            }
+            this.LapDistSpectatedCar = distance;
+
             this.IRating = irDriver.IRating;
             this.LicenceString = irDriver.LicString;
             this.LicenceColor = ParseColor(irDriver.LicColor);
