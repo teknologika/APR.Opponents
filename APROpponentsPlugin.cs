@@ -53,6 +53,9 @@ namespace APR.SimhubPlugins {
 
         public int frameCounter = 0;
 
+        internal int DriversAheadCount = 0;
+        internal int DriversbehindCount = 0;
+
 
         DateTime now;
         private long ClockTime;
@@ -179,7 +182,7 @@ namespace APR.SimhubPlugins {
 
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
-
+           
             // Declare an event
             this.AddEvent("LowFuelWarning");
 
@@ -234,17 +237,18 @@ namespace APR.SimhubPlugins {
             // TODO: The above for each class
 
             // Relative properties
+
             i = 1;
             foreach (var item in Session.DriversAhead) {
-                this.AttachDelegate($"Driver_Ahead_{i:D2}_LeaderboardPosition", () => item.Position);
-                this.AttachDelegate($"Driver_Ahead_{i:D2}_GapToPlayer", () => item.GapToPlayer);
+                AddSetProp($"Driver_Ahead_{i:D2}_LeaderboardPosition", item.Position);
+                AddSetProp($"Driver_Ahead_{i:D2}_GapToPlayer", item.GapToPlayer);
                 i++;
             }
 
             i = 1;
             foreach (var item in Session.DriversBehind) {
-                this.AttachDelegate($"Driver_Behind_{i:D2}_LeaderboardPosition", () => item.Position);
-                this.AttachDelegate($"Driver_Behind_{i:D2}_GapToPlayer", () => item.GapToPlayer);
+                AddSetProp($"Driver_Behind_{i:D2}_LeaderboardPosition", item.Position);
+                AddSetProp($"Driver_Behind_{i:D2}_GapToPlayer", item.GapToPlayer);
                 i++;
             }
 
@@ -259,6 +263,31 @@ namespace APR.SimhubPlugins {
 
 
         // Helper functions to deal with SimhubProperties
+        public void AddSetProp(string PropertyName, dynamic value) {
+            if (!HasProp(PropertyName)) {
+                if (String.IsNullOrEmpty(Convert.ToString(value))) {
+                    AddProp(PropertyName, null);
+                }
+                else {
+                    AddProp(PropertyName, value);
+                }
+            }
+            else {
+                if (String.IsNullOrEmpty(Convert.ToString(value))) {
+                    SetProp(PropertyName, null);
+                }
+                else {
+                    SetProp(PropertyName, value);
+                }
+            }
+        }
+
+        public void ClearProp(string PropertyName) {
+            if (HasProp(PropertyName)) {
+                SetProp(PropertyName, null);
+            }
+        }
+
         public void AddProp(string PropertyName, dynamic defaultValue) => PluginManager.AddProperty(PropertyName, GetType(), defaultValue);
         public void AddProp(string PropertyName) => PluginManager.AddProperty(PropertyName, GetType(), "");
 

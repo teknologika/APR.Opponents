@@ -77,19 +77,17 @@ namespace APR.SimhubPlugins.Data {
                         a.TotalLapDistance > 0 &&
                         a.IsConnected)
                         .OrderByDescending(a => a.LapDistSpectatedCar).ToList();
-
-//                    _driversAhead = value.FindAll(a => (!a.IsInPitLane || !a.IsInPitStall));
                 }
                 else {
                     _driversAhead = Drivers.FindAll( a => a.LapDistSpectatedCar < 0 &&
-                        (!a.IsInPitLane || !a.IsInPitStall) &&
+                        !a.IsInPitLane &&
+                        !a.IsInPitStall &&
                         !String.IsNullOrEmpty(a.Name) &&
                         a.TotalLapDistance > 0 &&
                         a.IsConnected)
                         .OrderByDescending(a => a.LapDistSpectatedCar).ToList();
                 }
                 return _driversAhead;
-
             }
         }
 
@@ -99,14 +97,16 @@ namespace APR.SimhubPlugins.Data {
                 _driversBehind.Clear();
                 if (Settings.RelativeShowCarsInPits) {
 
-                    _driversBehind = Drivers.FindAll(
-                        a => a.LapDistSpectatedCar < 0 &&
+                    _driversBehind = Drivers.FindAll(a => a.LapDistSpectatedCar > 0 &&
+                        !String.IsNullOrEmpty(a.Name) &&
+                        a.TotalLapDistance > 0 &&
                         a.IsConnected)
                         .OrderBy(a => a.LapDistSpectatedCar).ToList();
                 }
                 else {
                     _driversBehind = Drivers.FindAll(a => a.LapDistSpectatedCar > 0 &&
-                        (!a.IsInPitLane || !a.IsInPitStall) &&
+                        !a.IsInPitLane &&
+                        !a.IsInPitStall &&
                         !String.IsNullOrEmpty(a.Name) &&
                         a.TotalLapDistance > 0 &&
                         a.IsConnected)
