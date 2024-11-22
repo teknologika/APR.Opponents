@@ -12,10 +12,10 @@ using APR.SimhubPlugins.Models;
 using System.Linq;
 
 namespace APR.SimhubPlugins {
-    [PluginDescription("Enhanced iRacing Data")]
+    [PluginDescription("Extended iRacing Opponents")]
     [PluginAuthor("Bruce McLeod")]
-    [PluginName("APR iRacing Plugin")]
-    public class APRiRacingPlugin : IPlugin, IDataPlugin, IWPFSettingsV2 {
+    [PluginName("APR Opponents Plugin")]
+    public class APROpponentsPlugin : IPlugin, IDataPlugin, IWPFSettingsV2 {
         public OpponentsSettings Settings;
 
         /// <summary>

@@ -21,89 +21,109 @@ namespace APR.SimhubPlugins.Models {
             return $"P: {Position} LP:{LivePosition} TLD:{TotalLapDistance} {Name} GP: {GapToPlayer} GL: {GapToLeader} GN: {GapToNext}"; 
         }
 
-        // This is to identify the V8 veterans safety cars
         public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
-        public int[] V8VetsLeagueIDs = { 6455, 6788, 10129 };
 
-        public Driver() {
-            Console.WriteLine("DANGER - DRIVER() Called !!");
+        /* Stuff here is not used 
+         * 
+        public bool? PitRequested { get; set; }
+        public bool LapValid { get; set; } = true;
+        public double[] Coordinates { get; set; }
+
+        public double? DeltaToBest { get; set; }
+        public double? GapToPlayer { get; set; }
+        public double? CurrentLapHighPrecision { get; set; }
+        public double? GaptoLeader { get; set; }
+        public double? GaptoClassLeader { get; set; }
+        public double? GaptoPlayer { get; set; }
+
+        public string GapToLeaderCombined {
+            get => Driver.GetCombinedGapAsString(this.LapsToLeader, this.GaptoLeader);
         }
 
-        public Driver(ref GameData data, ref DataSampleEx irData, _Drivers irDriver) {
-
-            // these values come straight from the driver
-
-            // if we are the camera car push in extra fun stuff
-            if (irData.Telemetry.CamCarIdx == irDriver.CarIdx) {
-                this.IsCameraCar = true;
-            }
-            else {
-                this.IsCameraCar = false;
-            }
-            this.IsSpectator = Convert.ToBoolean(irDriver.IsSpectator);
-            if (this.IsPlayer) {
-                this.IsInGarage = irData.Telemetry.IsInGarage;
-            }
-
-            this.CarClassID = irDriver.CarClassID;
-            if (irDriver.IsPaceCar) {
-                this.CarClass = "Pace Cars";
-            }
-            else {
-                this.CarClass = irDriver.CarClassShortName;
-            }
-            this.CarClassColor = ParseColor(irDriver.CarClassColor);
-
-
-            this.CarIdx = irDriver.CarIdx;
-            this.CarName = irDriver.CarScreenName;
-            this.CarNumber = irDriver.CarNumber;
-            this.ClubName = irDriver.ClubName;
-            this.Name = irDriver.UserName;
-            this.TeamName = irDriver.TeamName;
-
-            this._trackSurface = (int)irData.Telemetry.CarIdxTrackSurface[irDriver.CarIdx];
-            this.ClassPosition = (int)irData.Telemetry.CarIdxClassPosition[irDriver.CarIdx];
-            this.Position = (int)irData.Telemetry.CarIdxPosition[irDriver.CarIdx];
-            this.CurrentLap = (int)irData.Telemetry.CarIdxLap[irDriver.CarIdx];
-            this.LapsComplete = (int)irData.Telemetry.CarIdxLapCompleted[irDriver.CarIdx];
-            this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
-
-            this._leagueID =  (int)irData.SessionData.WeekendInfo.LeagueID;
-
-            // Calculate the distance between the CameraCar and the Driver
-            // this is used for working out ahead / behind
-            double cameraCarLapDistPct = (float)irData.Telemetry.CarIdxLapDistPct[irData.Telemetry.CamCarIdx];
-            Track track = Track.FromSessionInfo(irData.SessionData.WeekendInfo, irData.SessionData.SplitTimeInfo);
-
-            var distance = (cameraCarLapDistPct * track.Length) - (TrackPositionPercent * track.Length);
-            // calculate the difference between the two cars
-            if (distance > track.Length / 2) {
-                distance -= track.Length;
-            }
-            else if (distance < -track.Length / 2) {
-                distance += track.Length;
-            }
-            this.LapDistSpectatedCar = distance;
-
-            this.IRating = irDriver.IRating;
-            this.LicenceString = irDriver.LicString;
-            this.LicenceColor = ParseColor(irDriver.LicColor);
-            this.LicenseLevel = irDriver.LicLevel;
-            this.LicenceSubLevel = irDriver.LicSubLevel;
-            this.CustId = irDriver.UserID;
-
-            this.EstTime = (float)irData.Telemetry.CarIdxEstTime[irDriver.CarIdx];
-            this.F2Time = (float)irData.Telemetry.CarIdxF2Time[irDriver.CarIdx];
-            this.Gear = (int)irData.Telemetry.CarIdxGear[irDriver.CarIdx];
+        public string GapToPlayerCombined {
+            get => Driver.GetCombinedGapAsString(this.LapsToPlayer, this.GaptoPlayer);
         }
 
-        private int _leagueID;
+        public string GapToClassLeaderCombined {
+            get => Driver.GetCombinedGapAsString(this.LapsToClassLeader, this.GaptoClassLeader);
+        }
+
+        public double? TrackPositionPercentToPlayer { get; set; }
+
+        public double? RelativeGapToPlayer { get; set; }
+
+        public double? RelativeDistanceToPlayer { get; set; }
+
+        public PointF? RelativeCoordinatesToPlayer { get; internal set; }
+
+        public double RelativeVectorAngleToPlayer { get; internal set; }
+
+        public double RelativeVectorLengthToPlayer { get; internal set; }
+
+        public double DraftEstimate { get; internal set; }
+
+        public string FrontTyreCompoundGameCode { get; set; }
+
+        public string RearTyreCompoundGameCode { get; set; }
+
+        public string FrontTyreCompound { get; set; }
+
+        public string RearTyreCompound { get; set; }
+
+                public DateTime? PitOutAtTime { get; set; }
+
+        public TimeSpan? PitOutSince { get; set; }
+
+        public double? PitOutLapsDoneSince { get; set; }
+
+        public bool IsOutLap { get; set; }
+
+        public int? PitCount { get; set; }
+
+        public double? PitOutAtLap { get; internal set; }
+
+        public DateTime? PitEnterAtTime { get; internal set; }
+
+        public double? PitEnterAtLap { get; internal set; }
+
+        public TimeSpan? PitLastDuration { get; internal set; }
+
+        public DateTime? GuessedLapStartTime { get; internal set; }
+
+        public TimeSpan? CurrentLapTime { get; set; }
+
+        public DateTime? StandingStillInPitLaneSince { get; internal set; }
+
+        public bool StandingStillInPitLane { get; internal set; }
+
+        public int? CurrentSector { get; set; }
+
+        public int? StartPosition { get; set; }
+
+        public int? StartPositionClass { get; set; }
+
+        public double? SplitDeltaSelf { get; internal set; }
+
+        public double? SplitDeltaBestLapOpponent { get; internal set; }
+
+        public int? RacePositionGain { get; internal set; }
+
+        public int? RacePositionClassGain { get; internal set; }
+
+        public bool? DidNotFinish { get; set; }
+
+        public bool? DidNotQualify { get; set; }
+
+        public int? P2PCount { get; set; }
+
+        public bool? P2PStatus { get; set; }
+
+
+        */
 
         public long CustId { get; set; }
         public long CarIdx { get; set; }
         
-
         public int Id { get { return (int)CarIdx; } }
 
         public string Name { get; set; }
@@ -144,27 +164,20 @@ namespace APR.SimhubPlugins.Models {
         public bool IsApproachingPits { get { return (_trackSurface == 2); } }
         public bool IsOnTrack { get { return (_trackSurface == 3); } }
         public bool IsInGarage { get; set; } = false;
-
-        // We treat the camera car as the player
         public bool IsPlayer { get { return IsCameraCar; } }
         public bool IsSpectator { get; set; }
-
-        // This is to identify the V8 veterans safety cars
-        private bool IsVetsPaceCar {
+        public bool IsVetsPaceCar {
             get {
-                if (V8VetsLeagueIDs.Contains(_leagueID)) {
-                    if (V8VetsSafetyCarNames.Contains(this.CarName)) {
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
+                if (V8VetsSafetyCarNames.Contains(this.CarName)) {
+                    return true;
                 }
-                return false;
+                else {
+                    return false;
+                }
             }
         }
 
-        private bool IsIRPaceCar {
+        public bool IsIRPaceCar {
             get {
                 if (CustId == -1 && CarIdx == 0) {
                     return true;
@@ -200,6 +213,7 @@ namespace APR.SimhubPlugins.Models {
         public int ClassPosition { get; set; }
         public int ClassLivePosition { get; set; }
         
+     
         public string CarName { get; set; }
 
         public string CarClass { get; set; }
@@ -270,7 +284,76 @@ namespace APR.SimhubPlugins.Models {
             return !sectortime.HasValue || sectortime.Value <= 0.0 ? new TimeSpan?() : new TimeSpan?(TimeSpan.FromMilliseconds(Math.Round(sectortime.Value, 3)));
         }
 
+        public Driver() {
+            Console.WriteLine("DANGER - DRIVER() Called !!");
+        }
+
+        public Driver(ref GameData data, ref DataSampleEx irData, _Drivers irDriver) {
+
+            // these values come straight from the driver
+
+            // if we are the camera car push in extra fun stuff
+            if (irData.Telemetry.CamCarIdx == irDriver.CarIdx) {
+                this.IsCameraCar = true;
+            }
+            else {
+                this.IsCameraCar = false;
+            }
+            this.IsSpectator = Convert.ToBoolean(irDriver.IsSpectator);
+            if (this.IsPlayer) {
+                this.IsInGarage = irData.Telemetry.IsInGarage;
+            }
+            
+            this.CarClassID = irDriver.CarClassID;
+            if (irDriver.IsPaceCar) {
+                this.CarClass = "Pace Cars";
+            }
+            else {
+                this.CarClass = irDriver.CarClassShortName;
+            }
+                this.CarClassColor = ParseColor(irDriver.CarClassColor);
+            this.CarIdx = irDriver.CarIdx;
+            this.CarName = irDriver.CarScreenName;
+            this.CarNumber = irDriver.CarNumber;
+            this.ClubName = irDriver.ClubName;
+            this.Name = irDriver.UserName;
+            this.TeamName = irDriver.TeamName;
+
+            this._trackSurface = (int)irData.Telemetry.CarIdxTrackSurface[irDriver.CarIdx];
+            this.ClassPosition = (int)irData.Telemetry.CarIdxClassPosition[irDriver.CarIdx];
+            this.Position = (int)irData.Telemetry.CarIdxPosition[irDriver.CarIdx];
+            this.CurrentLap = (int)irData.Telemetry.CarIdxLap[irDriver.CarIdx];
+            this.LapsComplete = (int)irData.Telemetry.CarIdxLapCompleted[irDriver.CarIdx];
+            this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
+            
+            // Calculate the distance between the CameraCar and the Driver
+            // this is used for working out ahead / behind
+            double cameraCarLapDistPct = (float)irData.Telemetry.CarIdxLapDistPct[irData.Telemetry.CamCarIdx];
+            Track track = Track.FromSessionInfo(irData.SessionData.WeekendInfo, irData.SessionData.SplitTimeInfo);
        
+            var distance = (cameraCarLapDistPct * track.Length) - (TrackPositionPercent * track.Length);
+            // calculate the difference between the two cars
+            if (distance > track.Length / 2) {
+                distance -= track.Length;
+            }
+            else if (distance < -track.Length / 2) {
+                distance += track.Length;
+            }
+            this.LapDistSpectatedCar = distance;
+
+            this.IRating = irDriver.IRating;
+            this.LicenceString = irDriver.LicString;
+            this.LicenceColor = ParseColor(irDriver.LicColor);
+            this.LicenseLevel = irDriver.LicLevel;
+            this.LicenceSubLevel = irDriver.LicSubLevel;
+            this.CustId = irDriver.UserID;
+
+            this.EstTime = (float)irData.Telemetry.CarIdxEstTime[irDriver.CarIdx];
+            this.F2Time = (float)irData.Telemetry.CarIdxF2Time[irDriver.CarIdx];
+            this.Gear = (int)irData.Telemetry.CarIdxGear[irDriver.CarIdx];
+
+
+        }
 
         public string ParseColor(string value) {
             if (!string.IsNullOrWhiteSpace(value) && value.StartsWith("0x")) {
@@ -282,104 +365,5 @@ namespace APR.SimhubPlugins.Models {
             }
             return "#FFFFFFFF";
         }
-
     }
 }
-
-/* Stuff here is not used 
-        * 
-       public bool? PitRequested { get; set; }
-       public bool LapValid { get; set; } = true;
-       public double[] Coordinates { get; set; }
-
-       public double? DeltaToBest { get; set; }
-       public double? GapToPlayer { get; set; }
-       public double? CurrentLapHighPrecision { get; set; }
-       public double? GaptoLeader { get; set; }
-       public double? GaptoClassLeader { get; set; }
-       public double? GaptoPlayer { get; set; }
-
-       public string GapToLeaderCombined {
-           get => Driver.GetCombinedGapAsString(this.LapsToLeader, this.GaptoLeader);
-       }
-
-       public string GapToPlayerCombined {
-           get => Driver.GetCombinedGapAsString(this.LapsToPlayer, this.GaptoPlayer);
-       }
-
-       public string GapToClassLeaderCombined {
-           get => Driver.GetCombinedGapAsString(this.LapsToClassLeader, this.GaptoClassLeader);
-       }
-
-       public double? TrackPositionPercentToPlayer { get; set; }
-
-       public double? RelativeGapToPlayer { get; set; }
-
-       public double? RelativeDistanceToPlayer { get; set; }
-
-       public PointF? RelativeCoordinatesToPlayer { get; internal set; }
-
-       public double RelativeVectorAngleToPlayer { get; internal set; }
-
-       public double RelativeVectorLengthToPlayer { get; internal set; }
-
-       public double DraftEstimate { get; internal set; }
-
-       public string FrontTyreCompoundGameCode { get; set; }
-
-       public string RearTyreCompoundGameCode { get; set; }
-
-       public string FrontTyreCompound { get; set; }
-
-       public string RearTyreCompound { get; set; }
-
-               public DateTime? PitOutAtTime { get; set; }
-
-       public TimeSpan? PitOutSince { get; set; }
-
-       public double? PitOutLapsDoneSince { get; set; }
-
-       public bool IsOutLap { get; set; }
-
-       public int? PitCount { get; set; }
-
-       public double? PitOutAtLap { get; internal set; }
-
-       public DateTime? PitEnterAtTime { get; internal set; }
-
-       public double? PitEnterAtLap { get; internal set; }
-
-       public TimeSpan? PitLastDuration { get; internal set; }
-
-       public DateTime? GuessedLapStartTime { get; internal set; }
-
-       public TimeSpan? CurrentLapTime { get; set; }
-
-       public DateTime? StandingStillInPitLaneSince { get; internal set; }
-
-       public bool StandingStillInPitLane { get; internal set; }
-
-       public int? CurrentSector { get; set; }
-
-       public int? StartPosition { get; set; }
-
-       public int? StartPositionClass { get; set; }
-
-       public double? SplitDeltaSelf { get; internal set; }
-
-       public double? SplitDeltaBestLapOpponent { get; internal set; }
-
-       public int? RacePositionGain { get; internal set; }
-
-       public int? RacePositionClassGain { get; internal set; }
-
-       public bool? DidNotFinish { get; set; }
-
-       public bool? DidNotQualify { get; set; }
-
-       public int? P2PCount { get; set; }
-
-       public bool? P2PStatus { get; set; }
-
-
-       */

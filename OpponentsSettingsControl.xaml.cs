@@ -7,14 +7,14 @@ namespace APR.SimhubPlugins {
     /// </summary>
     public partial class OpponentsSettingsControl : UserControl
     {
-        public APRiRacingPlugin Plugin { get; }
+        public APROpponentsPlugin Plugin { get; }
 
         public OpponentsSettingsControl()
         {
             InitializeComponent();
         }
 
-        public OpponentsSettingsControl(APRiRacingPlugin plugin) : this()
+        public OpponentsSettingsControl(APROpponentsPlugin plugin) : this()
         {
             this.Plugin = plugin;
         }
