@@ -138,10 +138,10 @@ namespace APR.SimhubPlugins {
                         SetProperties(Session);
                     }
 
-                    // Trigger Speed Warning example
-                    if (data.OldData.SpeedKmh < Settings.LowFuelWarningLevel && data.OldData.SpeedKmh >= Settings.LowFuelWarningLevel) {
+                    // Trigger Low Fuel Warning
+                    if (data.OldData.Fuel < Settings.LowFuelWarningLevel && data.OldData.Fuel >= Settings.LowFuelWarningLevel) {
                         // Trigger an event
-                        this.TriggerEvent("SpeedWarning");
+                        this.TriggerEvent("LowFuelWarning");
                     }
                 }
             }
@@ -186,7 +186,7 @@ namespace APR.SimhubPlugins {
             // Declare an action which can be called
             this.AddAction("IncrementLowFuelWarning", (a, b) => {
                 Settings.LowFuelWarningLevel++;
-                SimHub.Logging.Current.Info("LowFuel warning changed");
+                SimHub.Logging.Current.Info("Low Fuel warning changed");
             });
 
             // Declare an action which can be called
@@ -226,7 +226,6 @@ namespace APR.SimhubPlugins {
             foreach (var item in DriversByPosition) {
                 this.AttachDelegate($"Driver_{i:D2}_LeaderboardPosition", () => item.Position);
                 this.AttachDelegate($"Driver_{i:D2}_LeaderboardName", () => item.Name);
-                this.AttachDelegate($"Driver_{i:D2}_GapToPlayer", () => item.GapToPlayer);
                 this.AttachDelegate($"Driver_{i:D2}_GapToLeader", () => item.GapToLeader);
                 this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToNext);
                 i++;
@@ -235,7 +234,19 @@ namespace APR.SimhubPlugins {
             // TODO: The above for each class
 
             // Relative properties
+            i = 1;
+            foreach (var item in Session.DriversAhead) {
+                this.AttachDelegate($"Driver_Ahead_{i:D2}_LeaderboardPosition", () => item.Position);
+                this.AttachDelegate($"Driver_Ahead_{i:D2}_GapToPlayer", () => item.GapToPlayer);
+                i++;
+            }
 
+            i = 1;
+            foreach (var item in Session.DriversBehind) {
+                this.AttachDelegate($"Driver_Behind_{i:D2}_LeaderboardPosition", () => item.Position);
+                this.AttachDelegate($"Driver_Behind_{i:D2}_GapToPlayer", () => item.GapToPlayer);
+                i++;
+            }
 
             // Cars in pitlane
 

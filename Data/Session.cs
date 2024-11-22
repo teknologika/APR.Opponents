@@ -14,6 +14,7 @@ using APR.SimhubPlugins.Models;
 using static iRacingSDK.SessionData._DriverInfo;
 using System.Globalization;
 using System.Runtime;
+using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 
 namespace APR.SimhubPlugins.Data {
     internal class Session : IDisposable  {
@@ -68,35 +69,54 @@ namespace APR.SimhubPlugins.Data {
         public List<Driver> DriversAhead {
             get {
                 // if the distance is negative they are ahead
-                return Drivers.FindAll(a => a.LapDistSpectatedCar < 0 && a.IsConnected).OrderByDescending(a => a.LapDistSpectatedCar).ToList();
-            }
-            set {
+                _driversAhead.Clear();
                 if (Settings.RelativeShowCarsInPits) {
-                    _driversAhead = value.FindAll(a => (!a.IsInPitLane || !a.IsInPitStall));
+
+                    _driversAhead = Drivers.FindAll(a => a.LapDistSpectatedCar < 0 &&
+                        !String.IsNullOrEmpty(a.Name) &&
+                        a.TotalLapDistance > 0 &&
+                        a.IsConnected)
+                        .OrderByDescending(a => a.LapDistSpectatedCar).ToList();
+
+//                    _driversAhead = value.FindAll(a => (!a.IsInPitLane || !a.IsInPitStall));
                 }
                 else {
-                    _driversAhead = value;
+                    _driversAhead = Drivers.FindAll( a => a.LapDistSpectatedCar < 0 &&
+                        (!a.IsInPitLane || !a.IsInPitStall) &&
+                        !String.IsNullOrEmpty(a.Name) &&
+                        a.TotalLapDistance > 0 &&
+                        a.IsConnected)
+                        .OrderByDescending(a => a.LapDistSpectatedCar).ToList();
                 }
+                return _driversAhead;
+
             }
         }
 
         public List<Driver> DriversBehind {
             get {
                 // if the distance is positive they are behind
-                return Drivers.FindAll(a => a.LapDistSpectatedCar > 0 && a.IsConnected).OrderBy(a => a.LapDistSpectatedCar).ToList();
-            }
-            set {
+                _driversBehind.Clear();
                 if (Settings.RelativeShowCarsInPits) {
-                    _driversBehind = value.FindAll(a => (!a.IsInPitLane || !a.IsInPitStall));
+
+                    _driversBehind = Drivers.FindAll(
+                        a => a.LapDistSpectatedCar < 0 &&
+                        a.IsConnected)
+                        .OrderBy(a => a.LapDistSpectatedCar).ToList();
                 }
                 else {
-                    _driversBehind = value;
+                    _driversBehind = Drivers.FindAll(a => a.LapDistSpectatedCar > 0 &&
+                        (!a.IsInPitLane || !a.IsInPitStall) &&
+                        !String.IsNullOrEmpty(a.Name) &&
+                        a.TotalLapDistance > 0 &&
+                        a.IsConnected)
+                        .OrderBy(a => a.LapDistSpectatedCar).ToList();
                 }
+                return _driversBehind;
             }
         }
         public List<CarClass> CarClasses = new List<CarClass>();
         public Relatives Relative = new Relatives();
-
 
         internal void CheckAndAddCarClass(long CarClassID, string CarClassShortName, string CarClassColor, string CarClassTextColor) {
             bool has = this.CarClasses.Any(a => a.CarClassID == CarClassID);
@@ -167,8 +187,6 @@ namespace APR.SimhubPlugins.Data {
             UpdateTimeDelta();
             Relative.Update(ref Drivers, CameraCar);
 
-            
-
         }
 
         private void CalculateLivePositions() {
@@ -234,6 +252,11 @@ namespace APR.SimhubPlugins.Data {
         }
 
         private void UpdateTimeDelta() {
+
+
+        }
+
+        private void UpdateTimeDelta_old() {
             if (_timeDelta == null) return;
 
             // Update the positions of all cars
@@ -243,20 +266,18 @@ namespace APR.SimhubPlugins.Data {
             var drivers = Drivers
                 .Where(x => (
                     !String.IsNullOrEmpty(x.Name) &&
-                    x.TotalLapDistance > 0 
+                    x.TotalLapDistance > 0
                 ))
                 .OrderBy(d => d.TotalLapDistance).ToList();
-            
-            
-            
-            
+
+
             if (drivers.Count > 0) {
-                
+
                 // Get leader
                 var leader = drivers[0];
                 Leader.GapToLeader = "-";
                 Leader.GapToNext = "-";
-                
+
                 // Loop through drivers
                 for (int i = 1; i < drivers.Count; i++) {
                     var behind = drivers[i];
@@ -284,6 +305,7 @@ namespace APR.SimhubPlugins.Data {
                 }
             }
         }
+  
 
         protected virtual void Dispose(bool disposing) {
         }
