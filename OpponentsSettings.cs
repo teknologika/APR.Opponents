@@ -10,5 +10,6 @@ namespace APR.SimhubPlugins
         public double LowFuelWarningLevel = 5.0;
         public int MAX_CARS = 64;
         public bool OverrideJavaScriptFunctions = true;
+        public bool RelativeShowCarsInPits = false;
     }
 }

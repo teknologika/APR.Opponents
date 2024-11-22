@@ -16,10 +16,8 @@ using System.Globalization;
 using System.Runtime;
 
 namespace APR.SimhubPlugins.Data {
-    internal class Session : IDisposable {
-
-        
-
+    internal class Session : IDisposable  {
+        private OpponentsSettings Settings;
         public double SessionTime;
         public SessionState CurrentSessionState;
         public SessionState PreviousSessionState;
@@ -52,11 +50,6 @@ namespace APR.SimhubPlugins.Data {
             }
         }
 
-
-        
-
-
-
         DataSampleEx iRacingData;
         GameData data;
 
@@ -70,42 +63,37 @@ namespace APR.SimhubPlugins.Data {
 
         public List<Driver> Drivers = new List<Driver>();
         private List<Driver> _driversAhead = new List<Driver>();
-        private List<Driver> _Behind = new List<Driver>();
+        private List<Driver> _driversBehind = new List<Driver>();
 
-        /*
         public List<Driver> DriversAhead {
             get {
                 // if the distance is negative they are ahead
-                return Driver.FindAll(a => a.LapDistSpectatedCar < 0 && a.IsConnected).OrderByDescending(a => a.LapDistSpectatedCar).ToList();
+                return Drivers.FindAll(a => a.LapDistSpectatedCar < 0 && a.IsConnected).OrderByDescending(a => a.LapDistSpectatedCar).ToList();
             }
             set {
                 if (Settings.RelativeShowCarsInPits) {
-                    _opponentsAhead = value.FindAll(a => (!a.IsCarInPitLane || !a.IsCarInPitBox || !a.IsCarInGarage));
+                    _driversAhead = value.FindAll(a => (!a.IsInPitLane || !a.IsInPitStall));
                 }
                 else {
-                    _opponentsAhead = value;
+                    _driversAhead = value;
                 }
             }
         }
-        
 
-        public List<ExtendedOpponent> OpponentsBehind {
+        public List<Driver> DriversBehind {
             get {
-                // if the distance is positive they are ahead
-                return OpponentsExtended.FindAll(a => a.LapDistSpectatedCar > 0 && a.IsConnected).OrderBy(a => a.LapDistSpectatedCar).ToList();
+                // if the distance is positive they are behind
+                return Drivers.FindAll(a => a.LapDistSpectatedCar > 0 && a.IsConnected).OrderBy(a => a.LapDistSpectatedCar).ToList();
             }
             set {
                 if (Settings.RelativeShowCarsInPits) {
-                    _opponentsBehind = value.FindAll(a => (!a.IsCarInPitLane || !a.IsCarInPitBox || !a.IsCarInGarage));
+                    _driversBehind = value.FindAll(a => (!a.IsInPitLane || !a.IsInPitStall));
                 }
                 else {
-                    _opponentsBehind = value;
+                    _driversBehind = value;
                 }
             }
         }
-
-        */
-
         public List<CarClass> CarClasses = new List<CarClass>();
         public Relatives Relative = new Relatives();
 
@@ -125,7 +113,8 @@ namespace APR.SimhubPlugins.Data {
 
         public string Description;
 
-        public Session(ref GameData shData, ref DataSampleEx irData) {
+        public Session(ref OpponentsSettings settings, ref GameData shData, ref DataSampleEx irData) {
+            this.Settings = settings;
             this.iRacingData = irData;
         }
 

@@ -104,7 +104,7 @@ namespace APR.SimhubPlugins {
                     //Gaining access to raw data
                     if (data?.NewData?.GetRawDataObject() is DataSampleEx) { irData = data.NewData.GetRawDataObject() as DataSampleEx; }
 
-                    Session = new Session(ref data, ref irData);
+                    Session = new Session(ref Settings, ref data, ref irData);
                     Session.GetSessionData();
 
                     // Setup timers

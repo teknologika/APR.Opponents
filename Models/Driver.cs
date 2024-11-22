@@ -22,7 +22,6 @@ namespace APR.SimhubPlugins.Models {
 
         public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
 
-
         /* Stuff here is not used 
          * 
         public bool? PitRequested { get; set; }
@@ -313,6 +312,8 @@ namespace APR.SimhubPlugins.Models {
             this.LapsComplete = (int)irData.Telemetry.CarIdxLapCompleted[irDriver.CarIdx];
             this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
             
+            // Calculate the distance between the CameraCar and the Driver
+            // this is used for working out ahead / behind
             double cameraCarLapDistPct = (float)irData.Telemetry.CarIdxLapDistPct[irData.Telemetry.CamCarIdx];
             Track track = Track.FromSessionInfo(irData.SessionData.WeekendInfo, irData.SessionData.SplitTimeInfo);
        
