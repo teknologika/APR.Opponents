@@ -3,18 +3,18 @@ using System.Windows.Controls;
 
 namespace APR.SimhubPlugins {
     /// <summary>
-    /// Interaction logic for APRiRacingSettingsControl.xaml
+    /// Interaction logic for PluginSettingsControl.xaml
     /// </summary>
-    public partial class APRiRacingSettingsControl : UserControl
+    public partial class PluginSettingsControl : UserControl
     {
-        public APRiRacingPlugin Plugin { get; }
+        public APROpponentsPlugin Plugin { get; }
 
-        public APRiRacingSettingsControl()
+        public PluginSettingsControl()
         {
             InitializeComponent();
         }
 
-        public APRiRacingSettingsControl(APRiRacingPlugin plugin) : this()
+        public PluginSettingsControl(APROpponentsPlugin plugin) : this()
         {
             this.Plugin = plugin;
         }

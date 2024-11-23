@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>APR.SimhubPlugins</RootNamespace>
-    <AssemblyName>APR.OpponentsPlugin</AssemblyName>
+    <AssemblyName>APR.iRacing</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -133,8 +134,8 @@
     <Compile Include="Models\Sector.cs" />
     <Compile Include="Models\TimeDelta.cs" />
     <Compile Include="Models\Track.cs" />
-    <Compile Include="APROpponentsPlugin.cs" />
-    <Compile Include="OpponentsSettings.cs" />
+    <Compile Include="APRAPRiRacingPlugin.cs" />
+    <Compile Include="PluginSettings.cs" />
     <Compile Include="DemoDialogWindow.xaml.cs">
       <DependentUpon>DemoDialogWindow.xaml</DependentUpon>
     </Compile>
@@ -147,8 +148,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="PluginSetingsConrol.xaml.cs">
-      <DependentUpon>PluginSetingsConrol.xaml</DependentUpon>
+    <Compile Include="PluginSettingsControl.xaml.cs">
+      <DependentUpon>PluginSettingsControl.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -165,13 +166,13 @@
       <Generator>MSBuild:Compile</Generator>
       <ContainsDesignTimeResources>true</ContainsDesignTimeResources>
     </Page>
-    <Page Include="PluginSetingsConrol.xaml">
+    <Page Include="PluginSettingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="APR_Opponents_Extensions.js" />
+    <Content Include="APR_iRacing_Extensions.js" />
     <Content Include="sdkmenuicon.png" />
   </ItemGroup>
   <ItemGroup>

@@ -5,7 +5,7 @@ namespace APR.SimhubPlugins
     /// <summary>
     /// Settings class, make sure it can be correctly serialized using JSON.net
     /// </summary>
-    public class APRiRacingSettings
+    public class PluginSettings
     {
         public double LowFuelWarningLevel = 5.0;
         public int MAX_CARS = 64;
