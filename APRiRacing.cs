@@ -12,11 +12,11 @@ using APR.SimhubPlugins.Models;
 using System.Linq;
 
 namespace APR.SimhubPlugins {
-    [PluginDescription("Extended iRacing Opponents")]
+    [PluginDescription("Extended iRacing Data")]
     [PluginAuthor("Bruce McLeod")]
-    [PluginName("APR Opponents Plugin")]
-    public class APROpponentsPlugin : IPlugin, IDataPlugin, IWPFSettingsV2 {
-        public OpponentsSettings Settings;
+    [PluginName("APR iRacing Plugin")]
+    public class APRiRacing : IPlugin, IDataPlugin, IWPFSettingsV2 {
+        public PluginSettings Settings;
 
         /// <summary>
         /// Instance of the current plugin manager
@@ -31,7 +31,7 @@ namespace APR.SimhubPlugins {
         /// <summary>
         /// Gets a short plugin title to show in left menu. Return null if you want to use the title as defined in PluginName attribute.
         /// </summary>
-        public string LeftMenuTitle => "APR Opponents Plugin";
+        public string LeftMenuTitle => "APR iRacing";
 
         /// <summary>
         /// Called one ClockTime per game data update, contains all normalized game data,
@@ -166,7 +166,7 @@ namespace APR.SimhubPlugins {
         /// <param name="pluginManager"></param>
         /// <returns></returns>
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager) {
-            return new PluginSettingsControl(this);
+            return new SettingsControl(this) { DataContext = Settings };
         }
 
         /// <summary>
@@ -175,10 +175,17 @@ namespace APR.SimhubPlugins {
         /// </summary>
         /// <param name="pluginManager"></param>
         public void Init(PluginManager pluginManager) {
-            SimHub.Logging.Current.Info("Starting plugin");
+            SimHub.Logging.Current.Info("Starting APR iRacing plugin");
 
             // Load settings
-            Settings = this.ReadCommonSettings<OpponentsSettings>("GeneralSettings", () => new OpponentsSettings());
+            Settings = this.ReadCommonSettings<PluginSettings>("GeneralSettings", () => new PluginSettings());
+
+            this.OnSessionChange(pluginManager);
+
+
+            // Attatch delegates to the controls
+            this.AttachDelegate("OverrideJavaScriptFunctions", () => Settings.OverrideJavaScriptFunctions);
+
 
             // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
             this.AttachDelegate("CurrentDateTime", () => DateTime.Now);
@@ -201,10 +208,13 @@ namespace APR.SimhubPlugins {
         }
 
 
-
+        private void OnSessionChange(PluginManager pluginManager) {
+            if (Session != null) {
+                Session.Reset();
+            }
+        }
 
         private void AddProperties() {
-            AddProp("OverrideJavaScriptFunctions", Settings.OverrideJavaScriptFunctions);
             AddProp("GameIsSupported", true);
         }
 

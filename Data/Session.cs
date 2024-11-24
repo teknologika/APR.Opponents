@@ -18,7 +18,7 @@ using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 
 namespace APR.SimhubPlugins.Data {
     internal class Session : IDisposable  {
-        private OpponentsSettings Settings;
+        private PluginSettings Settings;
         public double SessionTime;
         public SessionState CurrentSessionState;
         public SessionState PreviousSessionState;
@@ -91,7 +91,19 @@ namespace APR.SimhubPlugins.Data {
             }
         }
 
-        public List<Driver> DriversBehind {
+        public void Reset() {
+            iRCameraCar = null;
+            Leader = null;
+            CameraCar = null;
+            LeaderLap = 0;
+
+            Drivers = new List<Driver>();
+            _driversAhead = new List<Driver>();
+            _driversBehind = new List<Driver>();
+
+    }
+
+    public List<Driver> DriversBehind {
             get {
                 // if the distance is positive they are behind
                 _driversBehind.Clear();
@@ -133,7 +145,7 @@ namespace APR.SimhubPlugins.Data {
 
         public string Description;
 
-        public Session(ref OpponentsSettings settings, ref GameData shData, ref DataSampleEx irData) {
+        public Session(ref PluginSettings settings, ref GameData shData, ref DataSampleEx irData) {
             this.Settings = settings;
             this.iRacingData = irData;
         }
