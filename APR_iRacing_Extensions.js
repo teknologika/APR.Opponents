@@ -1,15 +1,60 @@
 ﻿// How the overrides work https://stackoverflow.com/questions/10427708/override-function-e-g-alert-and-call-the-original-function
 
+// Functions for flags
+
+// Returns the black flag status for a driver if available 
+function driverflagblack(raceposition) {
+    var value;
+    var index = ((raceposition) ?? '00').toString().padStart(2, '0');
+    if ($prop('APRiRacing.GameIsSupported') != false && $prop('APRiRacing.OverrideJavaScriptFunctions') === true) {
+        value = $prop('APRiRacing.Driver_' + index + 'FlagBlack')
+    }
+    if (value != null) {
+        return value;
+    }
+    else {
+        return "";
+    }
+}
+
+// Returns the furled black flag status for a driver if available (e.g. slowdown, penalty to serve)
+function driverflagblackfurled(raceposition) {
+    var value;
+    var index = ((raceposition) ?? '00').toString().padStart(2, '0');
+    if ($prop('APRiRacing.GameIsSupported') != false && $prop('APRiRacing.OverrideJavaScriptFunctions') === true) {
+        value = $prop('APRiRacing.Driver_' + index + 'FlagBlackFurled')
+    }
+    if (value != null) {
+        return value;
+    }
+    else {
+        return "";
+    }
+}
+
+// Returns the repair (meatball) flag status for a driver if available
+function driverflagrepair(raceposition) {
+    var value;
+    var index = ((raceposition) ?? '00').toString().padStart(2, '0');
+    if ($prop('APRiRacing.GameIsSupported') != false && $prop('APRiRacing.OverrideJavaScriptFunctions') === true) {
+        value = $prop('APRiRacing.Driver_' + index + '_FlagRepair')
+    }
+    if (value != null) {
+        return value;
+    }
+    else {
+        return "";
+    }
+}
 
 // Returns for the race position the driver's relative gap to the camera car when available
 driverrelativegaptoplayer = (function (originalFunction) {
     return function (raceposition) {
         var value;
         var index = ((raceposition) ?? '00').toString().padStart(2, '0');
-        if ($prop('APROpponentsPlugin.GameIsSupported') != false && $prop('APROpponentsPlugin.OverrideJavaScriptFunctions') === true) {
+        if ($prop('APRiRacing.GameIsSupported') != false && $prop('APRiRacing.OverrideJavaScriptFunctions') === true) {
 
-            value = $prop('APROpponentsPlugin.Driver_' + index + '_GapToPlayer')
-            //value = $prop('APROpponentsPlugin.GetPlayerLeaderboardPosition');
+            value = $prop('APRiRacing.Driver_' + index + '_GapToPlayer')
         }
         else {
             value = originalFunction(raceposition);
@@ -28,8 +73,8 @@ driverrelativegaptoplayer = (function (originalFunction) {
 getplayerleaderboardposition = (function (originalFunction) {
     return function (leaderboardPosition) {
         var value;
-        if ($prop('APROpponentsPlugin.GameIsSupported') != false && $prop('APROpponentsPlugin.OverrideJavaScriptFunctions') === true) {
-            value = $prop('APROpponentsPlugin.GetPlayerLeaderboardPosition');
+        if ($prop('APRiRacing.GameIsSupported') != false && $prop('APRiRacing.OverrideJavaScriptFunctions') === true) {
+            value = $prop('APRiRacing.GetPlayerLeaderboardPosition');
         }
         else {
             value = originalFunction(leaderboardPosition);
@@ -53,11 +98,11 @@ function apr_getopponentleaderboardposition_aheadbehind(relativeIndex) {
 
     if (relativeIndex < 0) {
 
-        value = $prop('APROpponentsPlugin.Driver_Ahead_' + index + '_LeaderboardPosition');
-        //value = 'APROpponentsPlugin.Driver_Ahead_' + (relativeIndex ?? '00').toString().padStart(2, '0') + '_LeaderboardPosition';
+        value = $prop('APRiRacing.Driver_Ahead_' + index + '_LeaderboardPosition');
+        //value = 'APRiRacing.Driver_Ahead_' + (relativeIndex ?? '00').toString().padStart(2, '0') + '_LeaderboardPosition';
     }
     else if (relativeIndex > 0) {
-        value = $prop('APROpponentsPlugin.Driver_Behind_' + index + '_LeaderboardPosition');
+        value = $prop('APRiRacing.Driver_Behind_' + index + '_LeaderboardPosition');
     }
     else if (relativeIndex == 0) {
         value = getplayerleaderboardposition();
@@ -71,7 +116,7 @@ function apr_getopponentleaderboardposition_aheadbehind(relativeIndex) {
 getopponentleaderboardposition_aheadbehind = (function (originalFunction) {
     return function (relativeIndex) {
         var value;
-        if ($prop('APROpponentsPlugin.GameIsSupported') != false && $prop('APROpponentsPlugin.OverrideJavaScriptFunctions') === true) {
+        if ($prop('APRiRacing.GameIsSupported') != false && $prop('APRiRacing.OverrideJavaScriptFunctions') === true) {
             value = apr_getopponentleaderboardposition_aheadbehind(relativeIndex);
         }
         else {

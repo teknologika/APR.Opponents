@@ -242,8 +242,8 @@ namespace APR.SimhubPlugins {
                 this.AttachDelegate($"Driver_{i:D2}_GapToLeader", () => item.GapToLeader);
                 this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToNext);
                 this.AttachDelegate($"Driver_{i:D2}_GapToPlayer", () => item.GapToPlayer);
-                this.AttachDelegate($"Driver_{i:D2}_FlagMeatball", () => item.FlagMeatball);
-                this.AttachDelegate($"Driver_{i:D2}_FlagFurledBlack", () => item.FlagFurledBlack);
+                this.AttachDelegate($"Driver_{i:D2}_FlagRepair", () => item.FlagRepair);
+                this.AttachDelegate($"Driver_{i:D2}_FlagBlackFurled", () => item.FlagBlackFurled);
                 this.AttachDelegate($"Driver_{i:D2}_FlagBlack", () => item.FlagBlack);
 
                 i++;

@@ -15,6 +15,7 @@ using static iRacingSDK.SessionData._DriverInfo;
 using System.Globalization;
 using System.Runtime;
 using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
+using System.Drawing.Text;
 
 namespace APR.SimhubPlugins.Data {
     internal class Session : IDisposable  {
@@ -196,6 +197,7 @@ namespace APR.SimhubPlugins.Data {
             CalculateLivePositions();
             
             UpdateLeaderTimeDelta(ref Drivers, ref CarClasses, ref Leader);
+            UpdateCarAheadTimeDelta(ref Drivers, ref CarClasses);
             Relative.Update(ref Drivers, CameraCar);
 
         }
@@ -263,21 +265,40 @@ namespace APR.SimhubPlugins.Data {
         }
 
         private void UpdateLeaderTimeDelta(ref List<Driver> drivers, ref List<CarClass> carClasses, ref Driver leader) {
-            
+
             double leaderTotalTime = leader.TotalLapTime;
             foreach (var driver in drivers) {
-                driver.SetGapToLeader = leaderTotalTime - driver.TotalLapTime;
-                driver.LapsToLeader = Leader.LapsComplete - driver.LapsComplete;
+                if (driver.CurrentLap > 0) {
+                    double gapToLeader = leaderTotalTime - driver.TotalLapTime;
+                    driver.SetGapToLeader = gapToLeader;
+                    driver.LapsToLeader = Leader.LapsComplete - driver.LapsComplete;
+                }
             }
+        }
+
+        private void UpdateCarAheadTimeDelta(ref List<Driver> drivers, ref List<CarClass> carClasses) {
 
             // Sorted drivers to do the gaps to the car ahead
-            var sortedDrivers = drivers.FindAll(a => a.LapDistSpectatedCar > 0 &&
-                        !String.IsNullOrEmpty(a.Name) &&
+            var sortedDrivers = drivers.FindAll(a => !String.IsNullOrEmpty(a.Name) &&
                         a.TotalLapDistance > 0 &&
+                        a.Position > 0 &&
                         a.IsConnected)
-                        .OrderBy(a => a.Position)
+                        .OrderBy(a => a.GapToLeaderRaw)
                         .ThenBy(x => x.CarIdx)
                         .ToList();
+
+            for (var i = 0; i < sortedDrivers.Count; i++) {
+                if (i == 0) {
+                    sortedDrivers[i].SetGapToPositionAhead = 0.0;
+                }
+                else {
+                    double value = sortedDrivers[i].GapToLeaderRaw - sortedDrivers[i - 1].GapToLeaderRaw;
+                    sortedDrivers[i].SetGapToPositionAhead = value;
+                }
+            }
+
+
+          
 
             /*
             double previousGap = leader.GapToLeaderRaw;

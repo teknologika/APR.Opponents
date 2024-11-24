@@ -287,6 +287,8 @@ namespace APR.SimhubPlugins.Models {
                 _gapToLeader = value;
             }
         }
+        
+
         public double GapToLeaderRaw { get { return Math.Round(_gapToLeader,1);} }
         public string GapToLeader {
             get {
@@ -333,39 +335,44 @@ namespace APR.SimhubPlugins.Models {
                 }
             }
         }
+
+        private double _aheadGapToLeader = 0;
+        public double SetAheadGapToLeader {
+            set {
+                _aheadGapToLeader = value;
+            }
+        }
+
+        private double _gapToPositionAhead = 0;
         public double SetGapToPositionAhead {
             set {
                 _gapToPositionAhead = value;
             }
         }
-        private double _gapToPositionAhead = 0;
+       
         public string GapToPositionAhead {
             get {
-                if (_gapToPositionAhead == 0) {
+                // We are the leader or have not set a lap
+                if (Position <= 0) {
                     return "-.--";
                 }
+                else if (Position == 1) {
+                    return "Leader";
+                }
                 else {
-                    // divide the gap by the car class reference lap
-                    // use the modulus as the number of laps behind if the gap is
-                    // greater than the reference lap time
 
-                     return _gapToPositionAhead.ToString("0.0");
+                    if (_gapToPositionAhead == 0) {
+                        return "-.--";
+                    }
+                    else {
+                        return _gapToPositionAhead.ToString("0.0");
+                    }
                 }
             }
         }
         public double GapToPositionAheadRaw { get { return Math.Round(_gapToPositionAhead, 1); } }
 
-        private double _gapToClassPositionAhead = 0;
-        public string GapToClassPositionAhead {
-            get {
-                if (_gapToClassPositionAhead == 0) {
-                    return "-.--";
-                }
-                else {
-                    return _gapToClassPositionAhead.ToString("0.0");
-                }
-            }
-        }
+   
 
         public string GapToNext { get; set; } = "-.--";
 
@@ -375,7 +382,7 @@ namespace APR.SimhubPlugins.Models {
         public int? LapsToPlayer { get; set; }
 
         // Flags
-        public bool FlagMeatball {
+        public bool FlagRepair {
             get {
                 if (_sessionFlags.Contains(SessionFlags.Repair)) {
                     return true;
@@ -384,7 +391,7 @@ namespace APR.SimhubPlugins.Models {
             }
         }
 
-        // I tdon't think this is actually exposed
+        // I don't think this is actually exposed
         public bool FlagBlue {
             get {
                 if (_sessionFlags.Contains(SessionFlags.Blue)) {
@@ -404,7 +411,7 @@ namespace APR.SimhubPlugins.Models {
         }
 
         // This is normally a slowdown but also if a penalty
-        public bool FlagFurledBlack {
+        public bool FlagBlackFurled {
             get {
                 if (_sessionFlags.Contains(SessionFlags.Furled)) {
                     return true;
