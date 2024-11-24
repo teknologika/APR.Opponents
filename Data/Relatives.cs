@@ -78,7 +78,7 @@ namespace APR.SimhubPlugins.Data {
 
             foreach (var rel in _relativeTable.Get()) {
                 Driver dvr = drivers.Find(x => x.CarIdx == rel.CarIdx);
-                dvr.GapToPlayer = rel.RelativeGapString;
+                dvr.SetGapToPlayer = rel.simpleRelativeGapToSpectator;
             }
 
 

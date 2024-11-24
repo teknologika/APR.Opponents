@@ -13,10 +13,8 @@ namespace APR.SimhubPlugins
 
         public double LowFuelWarningLevel = 5.0;
         public int MAX_CARS = 64;
-        public bool RelativeShowCarsInPits = false;
-        public bool OverrideJavaScriptFunctions {  get; set; } = true;
-        public string testy { get; set; } = "test";
-        public string testy2 = "test2"; 
+        public bool RelativeShowCarsInPits { get; set; } = false;
+        public bool OverrideJavaScriptFunctions { get; set; } = true;
 
         #region Utility methods to refresh the UI see https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.inotifypropertychanged?view=netframework-4.7.2
 

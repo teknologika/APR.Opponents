@@ -17,10 +17,9 @@
                         <ColumnDefinition Width="574*"/>
                     </Grid.ColumnDefinitions>
 
-                    
-                    <styles:SHSection Title="APR iRacing Plugin Options" Grid.ColumnSpan="3" ShowSeparator="True">
-                        <StackPanel>
 
+                    <styles:SHSection Title="APR iRacing Plugin Options" Grid.ColumnSpan="3" ShowSeparator="True" HelpPath="https://github.com/teknologika/APR-iRacingPlugin/" >
+                        <StackPanel>
                             <Image Source="/APR.iRacing;component/Images/APR-Text-logo-white-black-background.png" Margin="10,10,10,10"/>
                             <styles:SHTitledGroup Title="Average Peformance Racing Plugin Overview">
                                 <TextBlock VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5" TextWrapping="WrapWithOverflow" Margin="25,5,5,5">
@@ -40,6 +39,7 @@
                 </Grid>
             </ScrollViewer>
         </styles:SHTabItem>
+        <styles:SHTabItem Header="Fuel Calculator" IsEnabled="False"/>
     </styles:SHTabControl>
 </UserControl>
     

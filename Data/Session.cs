@@ -30,7 +30,7 @@ namespace APR.SimhubPlugins.Data {
         public string EventType;
         public string SessionType { get { return EventType; } }
 
-        private TimeDelta _timeDelta;
+       // private TimeDelta _timeDelta;
         private Track _track;
 
 
@@ -101,9 +101,9 @@ namespace APR.SimhubPlugins.Data {
             _driversAhead = new List<Driver>();
             _driversBehind = new List<Driver>();
 
-    }
+        }
 
-    public List<Driver> DriversBehind {
+        public List<Driver> DriversBehind {
             get {
                 // if the distance is positive they are behind
                 _driversBehind.Clear();
@@ -127,6 +127,7 @@ namespace APR.SimhubPlugins.Data {
                 return _driversBehind;
             }
         }
+
         public List<CarClass> CarClasses = new List<CarClass>();
         public Relatives Relative = new Relatives();
 
@@ -158,7 +159,7 @@ namespace APR.SimhubPlugins.Data {
             CurrentSessionState = iRacingData.Telemetry.SessionState;
             CurrentSessionID = iRacingData.SessionData.WeekendInfo.SessionID;
             _track = Track.FromSessionInfo(iRacingData.SessionData.WeekendInfo,iRacingData.SessionData.SplitTimeInfo);
-            _timeDelta = new TimeDelta((float)_track.Length * 1000f, 20, 64);
+          
 
         }
 
@@ -184,8 +185,6 @@ namespace APR.SimhubPlugins.Data {
                 item.UpdateReferenceClassLaptime(Drivers);
             }
 
-            var bob = Leader;
-
             // Find the overall leader for each class and update their total time
             foreach (var item in CarClasses) {
                 List<Driver> classbyPosition = Drivers.FindAll(a => a.CarClassID == item.CarClassID && !a.IsSpectator).OrderBy(a => a.Position).ToList();
@@ -196,7 +195,7 @@ namespace APR.SimhubPlugins.Data {
 
             CalculateLivePositions();
             
-            UpdateTimeDelta();
+            UpdateLeaderTimeDelta(ref Drivers, ref CarClasses, ref Leader);
             Relative.Update(ref Drivers, CameraCar);
 
         }
@@ -220,7 +219,7 @@ namespace APR.SimhubPlugins.Data {
             }
             else {
                 // In P or Q, set live position from result position (== best lap according to iRacing)
-                foreach (var driver in Drivers.OrderBy(d => d.Position)) {
+                foreach (var driver in Drivers.OrderBy(d => d.Position).ThenBy(x => x.CarIdx)) {
                     if (!driver.IsPaceCar) {
                         if (this.Leader == null)
                             Leader = driver;
@@ -263,61 +262,37 @@ namespace APR.SimhubPlugins.Data {
             return iRacingData.Telemetry.CarIdxClassPosition[iRacingData.Telemetry.CamCarIdx];
         }
 
-        private void UpdateTimeDelta() {
-
-
-        }
-
-        private void UpdateTimeDelta_old() {
-            if (_timeDelta == null) return;
-
-            // Update the positions of all cars
-            _timeDelta.Update(SessionTime, iRacingData.Telemetry.CarIdxLapDistPct);
-
-            // Order drivers by live position
-            var drivers = Drivers
-                .Where(x => (
-                    !String.IsNullOrEmpty(x.Name) &&
-                    x.TotalLapDistance > 0
-                ))
-                .OrderBy(d => d.TotalLapDistance).ToList();
-
-
-            if (drivers.Count > 0) {
-
-                // Get leader
-                var leader = drivers[0];
-                Leader.GapToLeader = "-";
-                Leader.GapToNext = "-";
-
-                // Loop through drivers
-                for (int i = 1; i < drivers.Count; i++) {
-                    var behind = drivers[i];
-                    var ahead = drivers[i - 1];
-
-                    // Lapped?
-                    var leaderLapDiff = Math.Abs(this.Leader.TotalLapDistance - behind.TotalLapDistance);
-                    var nextLapDiff = Math.Abs(ahead.TotalLapDistance - behind.TotalLapDistance);
-
-                    if (leaderLapDiff < 1) {
-                        var leaderDelta = _timeDelta.GetDelta(behind.Id, Leader.Id);
-                        behind.GapToLeader = TimeDelta.DeltaToString(leaderDelta);
-                    }
-                    else {
-                        behind.GapToLeader = Math.Floor(leaderLapDiff) + " L";
-                    }
-
-                    if (nextLapDiff < 1) {
-                        var nextDelta = _timeDelta.GetDelta(behind.Id, ahead.Id);
-                        behind.GapToNext = TimeDelta.DeltaToString(nextDelta);
-                    }
-                    else {
-                        behind.GapToNext = Math.Floor(nextLapDiff) + " L";
-                    }
-                }
+        private void UpdateLeaderTimeDelta(ref List<Driver> drivers, ref List<CarClass> carClasses, ref Driver leader) {
+            
+            double leaderTotalTime = leader.TotalLapTime;
+            foreach (var driver in drivers) {
+                driver.SetGapToLeader = leaderTotalTime - driver.TotalLapTime;
+                driver.LapsToLeader = Leader.LapsComplete - driver.LapsComplete;
             }
+
+            // Sorted drivers to do the gaps to the car ahead
+            var sortedDrivers = drivers.FindAll(a => a.LapDistSpectatedCar > 0 &&
+                        !String.IsNullOrEmpty(a.Name) &&
+                        a.TotalLapDistance > 0 &&
+                        a.IsConnected)
+                        .OrderBy(a => a.Position)
+                        .ThenBy(x => x.CarIdx)
+                        .ToList();
+
+            /*
+            double previousGap = leader.GapToLeaderRaw;
+            int previousLapsComplete = leader.LapsComplete;
+
+            foreach (var driver in sortedDrivers) {
+                driver.SetGapToPositionAhead = driver.GapToLeaderRaw - previousGap;
+                driver.LapsToPositionAhead = previousLapsComplete - driver.LapsComplete;
+
+                previousGap = driver.GapToPositionAheadRaw;
+                previousLapsComplete = driver.LapsComplete;
+            }
+            */
         }
-  
+
 
         protected virtual void Dispose(bool disposing) {
         }

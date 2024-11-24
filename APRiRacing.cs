@@ -242,6 +242,10 @@ namespace APR.SimhubPlugins {
                 this.AttachDelegate($"Driver_{i:D2}_GapToLeader", () => item.GapToLeader);
                 this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToNext);
                 this.AttachDelegate($"Driver_{i:D2}_GapToPlayer", () => item.GapToPlayer);
+                this.AttachDelegate($"Driver_{i:D2}_FlagMeatball", () => item.FlagMeatball);
+                this.AttachDelegate($"Driver_{i:D2}_FlagFurledBlack", () => item.FlagFurledBlack);
+                this.AttachDelegate($"Driver_{i:D2}_FlagBlack", () => item.FlagBlack);
+
                 i++;
             }
 
@@ -253,6 +257,7 @@ namespace APR.SimhubPlugins {
             foreach (var item in Session.DriversAhead) {
                 AddSetProp($"Driver_Ahead_{i:D2}_LeaderboardPosition", item.Position);
                 AddSetProp($"Driver_Ahead_{i:D2}_GapToPlayer", item.GapToPlayer);
+                AddSetProp($"Driver_Ahead_{i:D2}_NameColor", item.NameRelativeColour);
                 i++;
             }
 
@@ -260,6 +265,7 @@ namespace APR.SimhubPlugins {
             foreach (var item in Session.DriversBehind) {
                 AddSetProp($"Driver_Behind_{i:D2}_LeaderboardPosition", item.Position);
                 AddSetProp($"Driver_Behind_{i:D2}_GapToPlayer", item.GapToPlayer);
+                AddSetProp($"Driver_Behind_{i:D2}_NameColor", item.NameRelativeColour);
                 i++;
             }
 

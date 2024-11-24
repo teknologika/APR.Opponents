@@ -2,6 +2,8 @@
 using GameReaderCommon;
 using GameReaderCommon.Replays;
 using IRacingReader;
+using iRacingSDK;
+using Microsoft.Win32.TaskScheduler;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -10,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Windows.Media.Animation;
 using static iRacingSDK.SessionData._DriverInfo;
 
 
@@ -18,7 +21,7 @@ namespace APR.SimhubPlugins.Models {
     internal class Driver {
 
         public override string ToString() {
-            return $"P: {Position} LP:{LivePosition} TLD:{TotalLapDistance} {Name} GP: {GapToPlayer} GL: {GapToLeader} GN: {GapToNext}"; 
+            return $"P: {Position} LP:{LivePosition} TLD:{TotalLapDistance} {Name} GP: {GapToPlayer} GL: {GapToLeader} GN: {GapToPositionAhead}"; 
         }
 
         public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
@@ -120,6 +123,7 @@ namespace APR.SimhubPlugins.Models {
 
 
         */
+        internal DataSampleEx _irData;
 
         public long CustId { get; set; }
         public long CarIdx { get; set; }
@@ -127,6 +131,34 @@ namespace APR.SimhubPlugins.Models {
         public int Id { get { return (int)CarIdx; } }
 
         public string Name { get; set; }
+        public string NameRelativeColour {
+            get {
+                 string RelativeTextRed = "#FFD05E55";
+                 string RelativeTextBlue = "#FF09D0D4";
+                 string RelativeTextWhite = "#FFECEDF4";
+                 string RelativeTextLightGrey = "#FF3F3C40";
+                 int cameraCarCurrentLap = _irData.Telemetry.CarIdxLap[_irData.Telemetry.CamCarIdx];
+
+                if (IsInPitLane || IsInPitStall || IsInGarage || !IsConnected) {
+                    return RelativeTextLightGrey;
+                }
+
+                if (_eventType == "Race") {
+                    if (CurrentLap > cameraCarCurrentLap) {
+                        return IsInPitLane ? RelativeTextLightGrey : RelativeTextRed; // Lapping you
+                    }
+                    else if (CurrentLap == cameraCarCurrentLap) {
+                        return IsInPitLane ? RelativeTextLightGrey : RelativeTextWhite; // Same lap as you
+                    }
+                    else {
+                        return IsInPitLane ? RelativeTextLightGrey : RelativeTextBlue; // Being lapped by you
+                    }
+                }
+                else {
+                    return RelativeTextWhite;
+                }
+            }
+        }
 
         public string TeamName { get; set; }
         public long TeamId { get; set; }
@@ -156,7 +188,8 @@ namespace APR.SimhubPlugins.Models {
         }
 
         private int _trackSurface;
-        
+        private string _eventType;
+
         public bool IsConnected { get { return (_trackSurface > -1); } }
         public bool IsOffTrack { get { return (_trackSurface == 0); } }
         public bool IsInPitStall { get { return (_trackSurface == 1); } }
@@ -206,6 +239,7 @@ namespace APR.SimhubPlugins.Models {
         public int Gear { get; set; }
         public float Speed { get; set; }
         public float RRM { get; set; }
+        private SessionFlag _sessionFlags { get; set; }
 
         public int Position { get; set; }
         public int LivePosition { get; set; }
@@ -226,47 +260,165 @@ namespace APR.SimhubPlugins.Models {
         public float IRating { get; set; }
 
         public float TrackPositionPercent { get; set; }
-        public double LapDistSpectatedCar { get; set; }
+        internal double LapDistSpectatedCar { get; set; }
 
         public int CurrentLap { get; set; }
         public int LapsComplete { get; set; }
-    
-        public float TotalLapDistance {          
+
+        internal double TotalLapDistance {          
             get {
                 var value = CurrentLap + TrackPositionPercent;
                 return value;
             }
         }
 
+        internal double TotalLapTime {
+            get {
+                var value = TotalLapDistance * ClassReferenceLapTime.TotalSeconds;
+                return value;
+            }
+        }
+
         public string CarNumber { get; set; } = "";
 
-        public string GapToLeader { get; set; } = "-.--";
-        private string _gapToPlayer = "-.--";
-        public string GapToPlayer {
+        private double _gapToLeader = 0;
+        public double SetGapToLeader {
+            set {
+                _gapToLeader = value;
+            }
+        }
+        public double GapToLeaderRaw { get { return Math.Round(_gapToLeader,1);} }
+        public string GapToLeader {
             get {
-                if (Convert.ToDouble(_gapToPlayer) > 0.0) {
-                    return "+" + _gapToPlayer;
+                if (_gapToLeader == 0) {
+                    if (Position == 1) {
+                        return "Leader";
+                    }
+                    else {
+                        return "-.--";
+                    }
                 }
                 else {
-                    return _gapToPlayer;
+                    if (LapsToLeader > 0) {
+                        if (LapsToLeader > 1) {
+                            return LapsToLeader + " Laps";
+                        }
+                        else {
+                            return "1 Lap";
+                        }
+                    }
+                    else {
+                        return _gapToLeader.ToString("0.0");
+                    }
                 }
             }
+        }
+
+        private double _gapToPlayer = 0;
+        public double SetGapToPlayer {
             set {
                 _gapToPlayer = value;
             }
-        } 
+        }
+        public string GapToPlayer {
+            get {
+                if (_gapToPlayer == 0) {
+                    return "-.--";
+                }
+                else if (_gapToPlayer > 0.0) {
+                    return "+" + _gapToPlayer.ToString("0.0");
+                }
+                else {
+                    return _gapToPlayer.ToString("0.0");
+                }
+            }
+        }
+        public double SetGapToPositionAhead {
+            set {
+                _gapToPositionAhead = value;
+            }
+        }
+        private double _gapToPositionAhead = 0;
+        public string GapToPositionAhead {
+            get {
+                if (_gapToPositionAhead == 0) {
+                    return "-.--";
+                }
+                else {
+                    // divide the gap by the car class reference lap
+                    // use the modulus as the number of laps behind if the gap is
+                    // greater than the reference lap time
+
+                     return _gapToPositionAhead.ToString("0.0");
+                }
+            }
+        }
+        public double GapToPositionAheadRaw { get { return Math.Round(_gapToPositionAhead, 1); } }
+
+        private double _gapToClassPositionAhead = 0;
+        public string GapToClassPositionAhead {
+            get {
+                if (_gapToClassPositionAhead == 0) {
+                    return "-.--";
+                }
+                else {
+                    return _gapToClassPositionAhead.ToString("0.0");
+                }
+            }
+        }
+
         public string GapToNext { get; set; } = "-.--";
 
-        public int? LapsToLeader { get; set; }
+        public int LapsToLeader { get; set; }
+        public int LapsToPositionAhead { get; set; }
         public int? LapsToClassLeader { get; set; }
         public int? LapsToPlayer { get; set; }
 
-       /*
-        public SectorTimes CurrentLapSectorTimes { get; set; }
-        public SectorTimes LastLapSectorTimes { get; set; }
-        public SectorTimes BestLapSectorTimes { get; set; }
-        public SectorSplits BestSectorSplits { get; set; } = new SectorSplits();
-       */
+        // Flags
+        public bool FlagMeatball {
+            get {
+                if (_sessionFlags.Contains(SessionFlags.Repair)) {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        // I tdon't think this is actually exposed
+        public bool FlagBlue {
+            get {
+                if (_sessionFlags.Contains(SessionFlags.Blue)) {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public bool FlagBlack {
+            get {
+                if (_sessionFlags.Contains(SessionFlags.Black)) {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        // This is normally a slowdown but also if a penalty
+        public bool FlagFurledBlack {
+            get {
+                if (_sessionFlags.Contains(SessionFlags.Furled)) {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        /*
+         public SectorTimes CurrentLapSectorTimes { get; set; }
+         public SectorTimes LastLapSectorTimes { get; set; }
+         public SectorTimes BestLapSectorTimes { get; set; }
+         public SectorSplits BestSectorSplits { get; set; } = new SectorSplits();
+        */
         private static string GetCombinedGapAsString(int? lapsGame, double? timeGap) {
             if (!timeGap.HasValue && !lapsGame.HasValue)
                 return "";
@@ -289,6 +441,7 @@ namespace APR.SimhubPlugins.Models {
         }
 
         public Driver(ref GameData data, ref DataSampleEx irData, _Drivers irDriver) {
+            _irData = irData;
 
             // these values come straight from the driver
 
@@ -299,6 +452,7 @@ namespace APR.SimhubPlugins.Models {
             else {
                 this.IsCameraCar = false;
             }
+
             this.IsSpectator = Convert.ToBoolean(irDriver.IsSpectator);
             if (this.IsPlayer) {
                 this.IsInGarage = irData.Telemetry.IsInGarage;
@@ -311,7 +465,9 @@ namespace APR.SimhubPlugins.Models {
             else {
                 this.CarClass = irDriver.CarClassShortName;
             }
-                this.CarClassColor = ParseColor(irDriver.CarClassColor);
+
+
+            this.CarClassColor = ParseColor(irDriver.CarClassColor);
             this.CarIdx = irDriver.CarIdx;
             this.CarName = irDriver.CarScreenName;
             this.CarNumber = irDriver.CarNumber;
@@ -320,10 +476,29 @@ namespace APR.SimhubPlugins.Models {
             this.TeamName = irDriver.TeamName;
 
             this._trackSurface = (int)irData.Telemetry.CarIdxTrackSurface[irDriver.CarIdx];
+            this._eventType = irData.SessionData.WeekendInfo.EventType;
             this.ClassPosition = (int)irData.Telemetry.CarIdxClassPosition[irDriver.CarIdx];
             this.Position = (int)irData.Telemetry.CarIdxPosition[irDriver.CarIdx];
             this.CurrentLap = (int)irData.Telemetry.CarIdxLap[irDriver.CarIdx];
-            this.LapsComplete = (int)irData.Telemetry.CarIdxLapCompleted[irDriver.CarIdx];
+            int _lapsComplete = (int)irData.Telemetry.CarIdxLapCompleted[irDriver.CarIdx];
+            if (_lapsComplete < 0) {
+                LapsComplete = 0;
+            }
+            else {
+                this.LapsComplete = _lapsComplete;
+            }
+
+            // float[] bestLapTimes = (float[])irData.Telemetry.FirstOrDefault(x => x.Key == "CarIdxBestLapTime").Value;
+            //float[] lastLapTimes = (float[])irData.Telemetry.FirstOrDefault(x => x.Key == "CarIdxLastLapTime").Value;
+
+
+            //int[] gear = (int[])irData.Telemetry.FirstOrDefault(x => x.Key == "CarIdxGear").Value;
+            //float[] rpm = (float[])irData.Telemetry.FirstOrDefault(x => x.Key == "CarIdxRPM").Value;
+
+            // Get the session flags for the driver and share in properties
+            int[] flags = (int[])irData.Telemetry.FirstOrDefault(x => x.Key == "CarIdxSessionFlags").Value;
+            this._sessionFlags = new SessionFlag(flags[CarIdx]);
+
             this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
             
             // Calculate the distance between the CameraCar and the Driver
