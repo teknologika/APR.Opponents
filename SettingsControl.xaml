@@ -21,15 +21,17 @@
                     <styles:SHSection Title="APR iRacing Plugin Options" Grid.ColumnSpan="3" ShowSeparator="True">
                         <StackPanel>
 
-                            <Image Source="/APR.iRacing;component/Images/APR-Text-logo-white-black-background.png" Width="350" Margin="10,10,10,10"/>
-                            <styles:SHTitledGroup Title="Plugin overview">
-
-                             <TextBlock 
-                                        Text="This plugin overrides the out of the box JavaScript functions intended for building dashboards and overlays. It implments the concept of the iracing CameraCar as the player which enables the plugin to work when spectating and broadcating." VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5" TextWrapping="WrapWithOverflow" Margin="25,5,5,5"/>
-                
+                            <Image Source="/APR.iRacing;component/Images/APR-Text-logo-white-black-background.png" Margin="10,10,10,10"/>
+                            <styles:SHTitledGroup Title="Average Peformance Racing Plugin Overview">
+                                <TextBlock VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5" TextWrapping="WrapWithOverflow" Margin="25,5,5,5">
+                                This plugin overrides the out of the box JavaScript functions intended for building dashboards and overlays.<LineBreak/><LineBreak/>                                It implments the concept of the iracing CameraCar as the player which enables the plugin to work when spectating and broadcating.<LineBreak/><LineBreak/>
+                                 The APR_iRacing_Extensions.js needs to be copied into your SimHub/JavascriptExtensions folder.
+                                 In a dashboard you need to Select "Enable JavaScript" and "Enable Global Extensions" when you wherever you call a JavaScript function.<LineBreak/><LineBreak/>
+                                 <Bold>This plugin only supports iRacing!!</Bold>
+                                </TextBlock>
                             </styles:SHTitledGroup>
 
-                            <styles:SHToggleCheckbox  HorizontalAlignment="Left" VerticalAlignment="Top" Height="20" IsChecked="{Binding OverrideJavaScriptFunctions}" Margin="25,0,0,0">
+                            <styles:SHToggleCheckbox  HorizontalAlignment="Left" VerticalAlignment="Top" Height="20" IsChecked="{Binding OverrideJavaScriptFunctions}" Margin="25,25,0,0">
                                 Override JavaScript Functions. (Plugin will be disabled witout this.)
                             </styles:SHToggleCheckbox>
 
