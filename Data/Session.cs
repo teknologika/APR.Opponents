@@ -135,7 +135,7 @@ namespace APR.SimhubPlugins.Data {
         internal void CheckAndAddCarClass(long CarClassID, string CarClassShortName, string CarClassColor, string CarClassTextColor) {
             bool has = this.CarClasses.Any(a => a.CarClassID == CarClassID);
 
-            if (has == false && CarClassID != 0) {
+            if (has == false) {
                 this.CarClasses.Add(new CarClass() {
                     CarClassID = CarClassID,
                     carClassShortName = CarClassShortName,
@@ -177,7 +177,9 @@ namespace APR.SimhubPlugins.Data {
             foreach (_Drivers competitor in iRCompetitors) {
                 var newDriver = new Driver(ref data, ref iRacingData, competitor);
                 Drivers.Add(newDriver);
-                CheckAndAddCarClass(newDriver.CarClassID, newDriver.CarClass, newDriver.CarClassColor, newDriver.CarClassTextColor);
+                if (!String.IsNullOrEmpty(newDriver.Name)) {
+                    CheckAndAddCarClass(newDriver.CarClassID, newDriver.CarClass, newDriver.CarClassColor, newDriver.CarClassTextColor);
+                }
             }
 
             // Update the reference lap time for each class
