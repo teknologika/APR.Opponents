@@ -240,7 +240,7 @@ namespace APR.SimhubPlugins {
                 this.AttachDelegate($"Driver_{i:D2}_LeaderboardPosition", () => item.Position);
                 this.AttachDelegate($"Driver_{i:D2}_LeaderboardName", () => item.Name);
                 this.AttachDelegate($"Driver_{i:D2}_GapToLeader", () => item.GapToLeader);
-                this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToNext);
+                this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToPositionAhead);
                 this.AttachDelegate($"Driver_{i:D2}_GapToPlayer", () => item.GapToPlayer);
                 this.AttachDelegate($"Driver_{i:D2}_FlagRepair", () => item.FlagRepair);
                 this.AttachDelegate($"Driver_{i:D2}_FlagBlackFurled", () => item.FlagBlackFurled);

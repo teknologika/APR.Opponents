@@ -372,10 +372,6 @@ namespace APR.SimhubPlugins.Models {
         }
         public double GapToPositionAheadRaw { get { return Math.Round(_gapToPositionAhead, 1); } }
 
-   
-
-        public string GapToNext { get; set; } = "-.--";
-
         public int LapsToLeader { get; set; }
         public int LapsToPositionAhead { get; set; }
         public int? LapsToClassLeader { get; set; }
