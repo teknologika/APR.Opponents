@@ -72,21 +72,20 @@ namespace APR.SimhubPlugins.Data {
                 // if the distance is negative they are ahead
                 _driversAhead.Clear();
                 if (Settings.RelativeShowCarsInPits) {
-
-                    _driversAhead = Drivers.FindAll(a => a.LapDistSpectatedCar < 0 &&
+                    _driversAhead = Drivers.FindAll(a => a.LapDistToCameraCar < 0 &&
                         !String.IsNullOrEmpty(a.Name) &&
                         a.TotalLapDistance > 0 &&
                         a.IsConnected)
-                        .OrderByDescending(a => a.LapDistSpectatedCar).ToList();
+                        .OrderByDescending(a => a.LapDistToCameraCar).ToList();
                 }
                 else {
-                    _driversAhead = Drivers.FindAll( a => a.LapDistSpectatedCar < 0 &&
+                    _driversAhead = Drivers.FindAll( a => a.LapDistToCameraCar < 0 &&
                         !a.IsInPitLane &&
                         !a.IsInPitStall &&
                         !String.IsNullOrEmpty(a.Name) &&
                         a.TotalLapDistance > 0 &&
                         a.IsConnected)
-                        .OrderByDescending(a => a.LapDistSpectatedCar).ToList();
+                        .OrderByDescending(a => a.LapDistToCameraCar).ToList();
                 }
                 return _driversAhead;
             }
@@ -110,20 +109,20 @@ namespace APR.SimhubPlugins.Data {
                 _driversBehind.Clear();
                 if (Settings.RelativeShowCarsInPits) {
 
-                    _driversBehind = Drivers.FindAll(a => a.LapDistSpectatedCar > 0 &&
+                    _driversBehind = Drivers.FindAll(a => a.LapDistToCameraCar > 0 &&
                         !String.IsNullOrEmpty(a.Name) &&
                         a.TotalLapDistance > 0 &&
                         a.IsConnected)
-                        .OrderBy(a => a.LapDistSpectatedCar).ToList();
+                        .OrderBy(a => a.LapDistToCameraCar).ToList();
                 }
                 else {
-                    _driversBehind = Drivers.FindAll(a => a.LapDistSpectatedCar > 0 &&
+                    _driversBehind = Drivers.FindAll(a => a.LapDistToCameraCar > 0 &&
                         !a.IsInPitLane &&
                         !a.IsInPitStall &&
                         !String.IsNullOrEmpty(a.Name) &&
                         a.TotalLapDistance > 0 &&
                         a.IsConnected)
-                        .OrderBy(a => a.LapDistSpectatedCar).ToList();
+                        .OrderBy(a => a.LapDistToCameraCar).ToList();
                 }
                 return _driversBehind;
             }
@@ -166,13 +165,16 @@ namespace APR.SimhubPlugins.Data {
 
         public void GetGameData() {
 
+        }
+
+        public void GetGameDataEverySecond() {
             // Get the current camera car. This will be the player or car being observed
             iRCameraCar = iRacingData.SessionData.DriverInfo.Drivers.SingleOrDefault(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx);
             CameraCar = new Driver(ref data, ref iRacingData, iRCameraCar);
 
             iRCompetitors = iRacingData.SessionData.DriverInfo.CompetingDrivers;
             iRDrivers = iRacingData.SessionData.DriverInfo.Drivers;
-           
+
             // Update the car classes
             foreach (_Drivers competitor in iRCompetitors) {
                 var newDriver = new Driver(ref data, ref iRacingData, competitor);
@@ -183,8 +185,7 @@ namespace APR.SimhubPlugins.Data {
             }
 
             // Update the reference lap time for each class
-            foreach (var item in CarClasses)
-            {
+            foreach (var item in CarClasses) {
                 item.UpdateReferenceClassLaptime(Drivers);
             }
 
@@ -197,12 +198,11 @@ namespace APR.SimhubPlugins.Data {
             }
 
             CalculateLivePositions();
-            
             UpdateLeaderTimeDelta(ref Drivers, ref CarClasses, ref Leader);
             UpdateCarAheadTimeDelta(ref Drivers, ref CarClasses);
-            Relative.Update(ref Drivers, CameraCar);
-
+            Relative.Update(ref iRacingData, ref CarClasses, ref Drivers, CameraCar);
         }
+
 
         private void CalculateLivePositions() {
             // In a race that is not yet in checkered flag mode,
@@ -300,20 +300,6 @@ namespace APR.SimhubPlugins.Data {
             }
 
 
-          
-
-            /*
-            double previousGap = leader.GapToLeaderRaw;
-            int previousLapsComplete = leader.LapsComplete;
-
-            foreach (var driver in sortedDrivers) {
-                driver.SetGapToPositionAhead = driver.GapToLeaderRaw - previousGap;
-                driver.LapsToPositionAhead = previousLapsComplete - driver.LapsComplete;
-
-                previousGap = driver.GapToPositionAheadRaw;
-                previousLapsComplete = driver.LapsComplete;
-            }
-            */
         }
 
 

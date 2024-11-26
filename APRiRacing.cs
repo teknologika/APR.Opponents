@@ -10,6 +10,7 @@ using static iRacingSDK.SessionData._SessionInfo;
 using SimHub.Plugins.OutputPlugins.BeltTensionner;
 using APR.SimhubPlugins.Models;
 using System.Linq;
+using System.Text;
 
 namespace APR.SimhubPlugins {
     [PluginDescription("Extended iRacing Data")]
@@ -52,9 +53,6 @@ namespace APR.SimhubPlugins {
         /// </summary>
 
         public int frameCounter = 0;
-
-        internal int DriversAheadCount = 0;
-        internal int DriversbehindCount = 0;
 
 
         DateTime now;
@@ -136,9 +134,43 @@ namespace APR.SimhubPlugins {
                         if (trackPosition > 0.02) {
                             lineCrossed = false;
                         }
+                    }
 
-                        Session.GetGameData();
-                        SetProperties(Session);
+                    if (frameCounter == 9) {
+                        try {
+                            if (data.NewData.SessionTimeLeft.TotalSeconds > 0) {
+                                Session.GetGameDataEverySecond();
+                                SetProperties(Session);
+
+                                AddSetProp("RelativeDebug", RelativeDebug());
+                            }
+                        }
+                        catch (Exception) {
+                        }
+                        /*
+                        if (runEvery1Sec) {
+                            if (data.GameRunning && data.NewData != null) {
+                                try {
+                                    if (data.NewData.SessionTimeLeft.TotalSeconds > 0) {
+                                        Session.GetGameDataEverySecond();
+                                        SetProperties(Session);
+                                    }
+                                }
+                                catch (Exception) {
+                                }
+                            }
+
+
+                        }*/
+                    }
+
+
+                    // update data every 10 cycles
+                    if ((frameCounter % 10) == 0 ) {
+
+                       // Session.GetGameData();
+                       // SetProperties(Session);
+
                     }
 
                     // Trigger Low Fuel Warning
@@ -148,6 +180,16 @@ namespace APR.SimhubPlugins {
                     }
                 }
             }
+        }
+        public string RelativeDebug() {
+            StringBuilder sb = new StringBuilder();
+            foreach (var item in Session.DriversAhead) {
+                sb.AppendLine(item.ToString());
+            }
+            foreach (var item in Session.DriversBehind) {
+                sb.AppendLine(item.ToString());
+            }
+            return sb.ToString();
         }
 
         /// <summary>
@@ -216,12 +258,42 @@ namespace APR.SimhubPlugins {
 
         private void AddProperties() {
             AddProp("GameIsSupported", true);
+
+            int maxCarsAhead = 10;
+            for (int j = 0; j < maxCarsAhead; j++) {
+                AddProp($"Driver_Ahead_{j + 1:D2}_LeaderboardPosition", "");
+                AddProp($"Driver_Ahead_{j + 1:D2}_GapToPlayer", "");
+                AddProp($"Driver_Ahead_{j + 1:D2}_NameColor", "");
+
+                AddProp($"Driver_Behind_{j + 1:D2}_LeaderboardPosition", "");
+                AddProp($"Driver_Behind_{j + 1:D2}_GapToPlayer", "");
+                AddProp($"Driver_Behind_{j + 1:D2}_NameColor", "");
+            }
+        }
+
+        
+
+        public void ClearRelativeProperties() {
+
+            for (int j = 0; j < Settings.RelativeMaxCarsAheadBehind; j++) {
+              
+                SetProp($"Driver_Ahead_{j + 1:D2}_LeaderboardPosition", "");
+                SetProp($"Driver_Ahead_{j + 1:D2}_GapToPlayer", "");
+                SetProp($"Driver_Ahead_{j + 1:D2}_NameColor", "");
+
+                SetProp($"Driver_Behind_{j + 1:D2}_LeaderboardPosition", "");
+                SetProp($"Driver_Behind_{j + 1:D2}_GapToPlayer", "");
+                SetProp($"Driver_Behind_{j + 1:D2}_NameColor", "");
+            }
+
+
         }
 
         private void SetProperties(Session session) {
 
             this.AttachDelegate("GetPlayerLeaderboardPosition", () => Session.GetPlayerLeaderboardPosition());
             this.AttachDelegate("GetPlayerClassLeaderboardPosition", () => Session.GetPlayerClassLeaderboardPosition());
+            ClearRelativeProperties();
 
             // Properties sorted by Position
             var DriversByPosition = session.Drivers.Where(
@@ -241,7 +313,7 @@ namespace APR.SimhubPlugins {
                 this.AttachDelegate($"Driver_{i:D2}_LeaderboardName", () => item.Name);
                 this.AttachDelegate($"Driver_{i:D2}_GapToLeader", () => item.GapToLeader);
                 this.AttachDelegate($"Driver_{i:D2}_GapToNext", () => item.GapToPositionAhead);
-                this.AttachDelegate($"Driver_{i:D2}_GapToPlayer", () => item.GapToPlayer);
+                this.AttachDelegate($"Driver_{i:D2}_GapToPlayer", () => item.GapToCameraCar);
                 this.AttachDelegate($"Driver_{i:D2}_FlagRepair", () => item.FlagRepair);
                 this.AttachDelegate($"Driver_{i:D2}_FlagBlackFurled", () => item.FlagBlackFurled);
                 this.AttachDelegate($"Driver_{i:D2}_FlagBlack", () => item.FlagBlack);
@@ -249,26 +321,75 @@ namespace APR.SimhubPlugins {
                 i++;
             }
 
-            // TODO: The above for each class
-
-            // Relative properties
-
             i = 1;
-            foreach (var item in Session.DriversAhead) {
-                AddSetProp($"Driver_Ahead_{i:D2}_LeaderboardPosition", item.Position);
-                AddSetProp($"Driver_Ahead_{i:D2}_GapToPlayer", item.GapToPlayer);
-                AddSetProp($"Driver_Ahead_{i:D2}_NameColor", item.NameRelativeColour);
-                i++;
+            foreach (var driver in Session.DriversAhead) {
+
+                if (Settings.RelativeShowCarsInPits || (!Settings.RelativeShowCarsInPits && !driver.IsInPitStall)) {
+
+                    SetProp($"Driver_Ahead_{i:D2}_LeaderboardPosition", driver.Position);
+                    SetProp($"Driver_Ahead_{i:D2}_GapToPlayer", driver.GapToCameraCar);
+                    SetProp($"Driver_Ahead_{i:D2}_NameColor", driver.Name);
+                    SetProp($"Driver_Ahead_{i:D2}_NameColor", driver.NameRelativeColour);
+
+                    i++;
+
+                }
             }
 
             i = 1;
-            foreach (var item in Session.DriversBehind) {
+            foreach (var driver in Session.DriversBehind) {
+
+                if (Settings.RelativeShowCarsInPits || (!Settings.RelativeShowCarsInPits && !driver.IsInPitStall)) {
+
+                    SetProp($"Driver_Behind_{i:D2}_LeaderboardPosition", driver.Position);
+                    SetProp($"Driver_Behind_{i:D2}_GapToPlayer", driver.GapToCameraCar);
+                    SetProp($"Driver_Behind_{i:D2}_NameColor", driver.Name);
+                    SetProp($"Driver_Behind_{i:D2}_NameColor", driver.NameRelativeColour);
+
+                    i++;
+
+                }
+            }
+            /*
+
+
+            for (int j = 0;j < Settings.RelativeMaxCarsAheadBehind; j++) {
+                if (j < session.Relative.Ahead.Count) {
+                    SetProp($"Driver_Ahead_{j + 1:D2}_LeaderboardPosition", Session.Relative.Ahead[j].Position);
+                    SetProp($"Driver_Ahead_{j + 1:D2}_GapToPlayer", Session.Relative.Ahead[j].GapToCameraCar);
+                    SetProp($"Driver_Ahead_{j + 1:D2}_NameColor", Session.Relative.Ahead[j].NameRelativeColour);
+                }
+                else {
+                    SetProp($"Driver_Ahead_{j + 1:D2}_LeaderboardPosition", "");
+                    SetProp($"Driver_Ahead_{j + 1:D2}_GapToPlayer", "");
+                    SetProp($"Driver_Ahead_{j + 1:D2}_NameColor", "");
+                }
+            }
+
+            for (int j = 0; j < Settings.RelativeMaxCarsAheadBehind; j++) {
+                if (j < session.Relative.Behind.Count) {
+                    SetProp($"Driver_Behind_{j + 1:D2}_LeaderboardPosition", Session.Relative.Behind[j].Position);
+                    SetProp($"Driver_Behind_{j + 1:D2}_GapToPlayer", Session.Relative.Behind[j].GapToCameraCar);
+                    SetProp($"Driver_Behind_{j + 1:D2}_NameColor", Session.Relative.Behind[j].NameRelativeColour);
+                }
+                else {
+                    SetProp($"Driver_Behind_{j + 1:D2}_LeaderboardPosition", "");
+                    SetProp($"Driver_Behind_{j + 1:D2}_GapToPlayer", "");
+                    SetProp($"Driver_Behind_{j + 1:D2}_NameColor", "");
+                }
+            }
+            */
+
+            /*
+
+            i = 1;
+            foreach (var item in Session.Relative.Behind.OrderByDescending(a => a.GapToCameraCarRaw)) {
                 AddSetProp($"Driver_Behind_{i:D2}_LeaderboardPosition", item.Position);
-                AddSetProp($"Driver_Behind_{i:D2}_GapToPlayer", item.GapToPlayer);
+                AddSetProp($"Driver_Behind_{i:D2}_GapToPlayer", item.GapToCameraCar);
                 AddSetProp($"Driver_Behind_{i:D2}_NameColor", item.NameRelativeColour);
                 i++;
             }
-
+            */
             // Cars in pitlane
 
 

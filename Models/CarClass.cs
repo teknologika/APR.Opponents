@@ -44,7 +44,7 @@ namespace APR.SimhubPlugins.Models {
             if (count > 0) {
                 averageLapTime = averageLapTime / count;
             }
-            // if no time, just use 2 mins
+            // if no time, just use 120 seconds
             if (averageLapTime == 0) {
                 averageLapTime = 120.0;
             }

@@ -21,7 +21,7 @@ namespace APR.SimhubPlugins.Models {
     internal class Driver {
 
         public override string ToString() {
-            return $"P: {Position} LP:{LivePosition} TLD:{TotalLapDistance} {Name} GP: {GapToPlayer} GL: {GapToLeader} GN: {GapToPositionAhead}"; 
+            return $"P: {Position} LP:{LivePosition.ToString("0.0")} TLD:{TotalLapDistance} {Name} GP: {GapToCameraCar} GL: {GapToLeader} GN: {GapToPositionAhead}"; 
         }
 
         public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
@@ -33,7 +33,7 @@ namespace APR.SimhubPlugins.Models {
         public double[] Coordinates { get; set; }
 
         public double? DeltaToBest { get; set; }
-        public double? GapToPlayer { get; set; }
+        public double? GapToCameraCar { get; set; }
         public double? CurrentLapHighPrecision { get; set; }
         public double? GaptoLeader { get; set; }
         public double? GaptoClassLeader { get; set; }
@@ -124,6 +124,7 @@ namespace APR.SimhubPlugins.Models {
 
         */
         internal DataSampleEx _irData;
+        internal Track _track;
 
         public long CustId { get; set; }
         public long CarIdx { get; set; }
@@ -255,12 +256,29 @@ namespace APR.SimhubPlugins.Models {
 
         public TimeSpan BestLapTime { get; set; }
         public TimeSpan LastLapTime { get; set; }
-        public TimeSpan ClassReferenceLapTime { get; set; }
+        private TimeSpan _classReferenceLapTime;
+        public TimeSpan ClassReferenceLapTime {
+            get {
+                // if we have set it to 2 mins, instead base it on track length
+                if (_classReferenceLapTime.TotalSeconds == 120.0) {
+
+                    // 180 kmh reference speed
+                    return TimeSpan.FromSeconds((_track.Length / 180) * 3600);
+                }
+                else {
+                    return _classReferenceLapTime;
+                }
+            }
+            set { _classReferenceLapTime = value; }
+        }
+
+
 
         public float IRating { get; set; }
 
         public float TrackPositionPercent { get; set; }
-        internal double LapDistSpectatedCar { get; set; }
+        //internal double LapDistSpectatedCar { get; set; }
+
 
         public int CurrentLap { get; set; }
         public int LapsComplete { get; set; }
@@ -287,12 +305,13 @@ namespace APR.SimhubPlugins.Models {
                 _gapToLeader = value;
             }
         }
+
         
 
         public double GapToLeaderRaw { get { return Math.Round(_gapToLeader,1);} }
         public string GapToLeader {
             get {
-                if (_gapToLeader == 0) {
+                if (LapsToLeader == 0) {
                     if (Position == 1) {
                         return "Leader";
                     }
@@ -316,25 +335,50 @@ namespace APR.SimhubPlugins.Models {
             }
         }
 
-        private double _gapToPlayer = 0;
-        public double SetGapToPlayer {
+        private double _CameraCarTrackDistancePercent = 0;
+        public double SetCameraCarTrackDistancePercent {
             set {
-                _gapToPlayer = value;
+                _CameraCarTrackDistancePercent = value;
             }
         }
-        public string GapToPlayer {
+
+        public double LapDistToCameraCar {
             get {
-                if (_gapToPlayer == 0) {
+              
+                var distance = (_CameraCarTrackDistancePercent * _track.Length) - (TrackPositionPercent * _track.Length);
+                if (distance > _track.Length / 2) {
+                    distance -= _track.Length;
+                }
+                else if (distance < -_track.Length / 2) {
+                    distance += _track.Length;
+                }
+
+                return distance;
+            }
+        }
+
+        public double GapToCameraCarRaw {
+            get {
+                return Math.Round(ClassReferenceLapTime.TotalSeconds / _track.Length * LapDistToCameraCar,2);
+            }
+        }
+
+   
+
+        public string GapToCameraCar {
+            get {
+                if (GapToCameraCarRaw == 0) {
                     return "-.--";
                 }
-                else if (_gapToPlayer > 0.0) {
-                    return "+" + _gapToPlayer.ToString("0.0");
+                else if (GapToCameraCarRaw > 0.0) {
+                    return "+" + GapToCameraCarRaw.ToString("0.0");
                 }
                 else {
-                    return _gapToPlayer.ToString("0.0");
+                    return GapToCameraCarRaw.ToString("0.0");
                 }
             }
         }
+        
 
         private double _aheadGapToLeader = 0;
         public double SetAheadGapToLeader {
@@ -342,6 +386,9 @@ namespace APR.SimhubPlugins.Models {
                 _aheadGapToLeader = value;
             }
         }
+
+        // used when sorting the relative
+        public double SortingRelativeGapToSpectator { get; set; } 
 
         private double _gapToPositionAhead = 0;
         public double SetGapToPositionAhead {
@@ -446,6 +493,9 @@ namespace APR.SimhubPlugins.Models {
         public Driver(ref GameData data, ref DataSampleEx irData, _Drivers irDriver) {
             _irData = irData;
 
+            // calculate the difference between the two cars
+            _track = Track.FromSessionInfo(_irData.SessionData.WeekendInfo, _irData.SessionData.SplitTimeInfo);
+
             // these values come straight from the driver
 
             // if we are the camera car push in extra fun stuff
@@ -509,15 +559,8 @@ namespace APR.SimhubPlugins.Models {
             double cameraCarLapDistPct = (float)irData.Telemetry.CarIdxLapDistPct[irData.Telemetry.CamCarIdx];
             Track track = Track.FromSessionInfo(irData.SessionData.WeekendInfo, irData.SessionData.SplitTimeInfo);
        
-            var distance = (cameraCarLapDistPct * track.Length) - (TrackPositionPercent * track.Length);
-            // calculate the difference between the two cars
-            if (distance > track.Length / 2) {
-                distance -= track.Length;
-            }
-            else if (distance < -track.Length / 2) {
-                distance += track.Length;
-            }
-            this.LapDistSpectatedCar = distance;
+        
+            this.SetCameraCarTrackDistancePercent = cameraCarLapDistPct;
 
             this.IRating = irDriver.IRating;
             this.LicenceString = irDriver.LicString;
