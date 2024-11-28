@@ -57,7 +57,7 @@ namespace APR.SimhubPlugins.Data {
 
         _Drivers iRCameraCar = null;
         Driver Leader = null;
-        Driver CameraCar = null;
+        public Driver CameraCar = null;
         int LeaderLap = 0;
 
         _Drivers[] iRCompetitors;
@@ -149,6 +149,7 @@ namespace APR.SimhubPlugins.Data {
         public Session(ref PluginSettings settings, ref GameData shData, ref DataSampleEx irData) {
             this.Settings = settings;
             this.iRacingData = irData;
+            this.data = shData;
         }
 
         public void GetSessionData() {
@@ -198,11 +199,34 @@ namespace APR.SimhubPlugins.Data {
             }
 
             CalculateLivePositions();
+            CalculateSimhubPositions();
             UpdateLeaderTimeDelta(ref Drivers, ref CarClasses, ref Leader);
             UpdateCarAheadTimeDelta(ref Drivers, ref CarClasses);
             Relative.Update(ref iRacingData, ref CarClasses, ref Drivers, CameraCar);
         }
 
+        private void CalculateSimhubPositions() {
+  
+            List <Driver> simhubSortList = new List<Driver>();
+            // Simhub sorts by Position, if position is zero then CarIdx with zero position cars at the end
+            
+            // first we add the drivers with positions
+            foreach (var driver in Drivers.Where(x => x.Position > 0).OrderBy(d => d.Position).ThenBy(x => x.CarIdx)) {
+                simhubSortList.Add(driver);
+            }
+
+            // then we add drivers with position = 0
+            foreach (var driver in Drivers.Where(x => x.Position == 0).OrderBy(d => d.Position).ThenBy(x => x.CarIdx)) {
+                simhubSortList.Add(driver);
+            }
+
+            // now update the driver value
+            for (int i = 0; i < simhubSortList.Count; i++) {
+                Drivers.Find(x => x.CarIdx == simhubSortList[i].CarIdx).SimhubPosition = i+1;
+            }
+
+            var bob = Drivers.OrderBy(x => x.SimhubPosition).ToList();
+        }
 
         private void CalculateLivePositions() {
             // In a race that is not yet in checkered flag mode,

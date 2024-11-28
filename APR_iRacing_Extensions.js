@@ -92,12 +92,14 @@ getplayerleaderboardposition = (function (originalFunction) {
 // Returns the leaderboard position of the player's ahead/behind on track opponents
 // relativeIndex 0 is the camera car, -1 the first driver ahead, 1 the first driver behind
 // this function assumes the override check has already been performed
-function apr_getopponentleaderboardposition_aheadbehind(relativeIndex) {
+function apr_getopponentleaderboardposition_aheadbehind_old(relativeIndex) {
     var value = -1;
-    var index = (Math.abs(relativeIndex) ?? '00').toString().padStart(2, '0');
+    if (relativeIndex < 0)
+        index = '-' + (Math.abs(relativeIndex) ?? '00').toString().padStart(2, '0');
+    else
+        index = (relativeIndex ?? '00').toString().padStart(2, '0');
 
     if (relativeIndex < 0) {
-
         value = $prop('APRiRacing.Driver_Ahead_' + index + '_LeaderboardPosition');
         //value = 'APRiRacing.Driver_Ahead_' + (relativeIndex ?? '00').toString().padStart(2, '0') + '_LeaderboardPosition';
     }
@@ -107,11 +109,42 @@ function apr_getopponentleaderboardposition_aheadbehind(relativeIndex) {
     else if (relativeIndex == 0) {
         value = getplayerleaderboardposition();
     }
-    else {
-        value = null;
+    if (value == null) {
+        return -1;
     }
-    return value;
+    else if (value == 0) {
+        return;
+    }
+
+    else {
+        return value;
+    }
 }
+
+// Returns the leaderboard position of the player's ahead/behind on track opponents
+// relativeIndex 0 is the camera car, -1 the first driver ahead, 1 the first driver behind
+// this function assumes the override check has already been performed
+function apr_getopponentleaderboardposition_aheadbehind(relativeIndex) {
+    var index;
+    if (relativeIndex < 0)
+        index = '-' + (Math.abs(relativeIndex) ?? '00').toString().padStart(2, '0');
+    else
+        index = (relativeIndex ?? '00').toString().padStart(2, '0');
+    return $prop('APRiRacing.Relative_' + index + '_SimhubPosition');
+}
+
+// Returns the leaderboard position of the player's ahead/behind on track opponents
+// relativeIndex 0 is the camera car, -1 the first driver ahead, 1 the first driver behind
+// this function assumes the override check has already been performed
+function drivernamecolor_aheadbehind(relativeIndex) {
+    var index;
+    if (relativeIndex < 0)
+        index = '-' + (Math.abs(relativeIndex) ?? '00').toString().padStart(2, '0');
+    else
+        index = (relativeIndex ?? '00').toString().padStart(2, '0');
+    return $prop('APRiRacing.Relative_' + index + '_NameColor');
+}
+
 
 getopponentleaderboardposition_aheadbehind = (function (originalFunction) {
     return function (relativeIndex) {
@@ -127,7 +160,7 @@ getopponentleaderboardposition_aheadbehind = (function (originalFunction) {
             return value;
         }
         else {
-            return "";
+            return null;
         }
     };
 })(getopponentleaderboardposition_aheadbehind);

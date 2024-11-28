@@ -6,6 +6,7 @@ using iRacingSDK;
 using Microsoft.Win32.TaskScheduler;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -125,7 +126,7 @@ namespace APR.SimhubPlugins.Models {
         */
         internal DataSampleEx _irData;
         internal Track _track;
-
+        internal GameData _data;
         public long CustId { get; set; }
         public long CarIdx { get; set; }
         
@@ -243,6 +244,22 @@ namespace APR.SimhubPlugins.Models {
         private SessionFlag _sessionFlags { get; set; }
 
         public int Position { get; set; }
+        public int SimhubPosition { get; set; }
+
+        /*
+        public int SimhubPosition {
+            get {
+                var shOpponent = _data.NewData.Opponents.Find(x => x.Name == Name);
+                if (shOpponent == null) {
+                    return shOpponent.Position;
+                }
+                else {
+                    return -1;
+                }
+            }
+        }
+        */
+        
         public int LivePosition { get; set; }
 
         public int ClassPosition { get; set; }
@@ -339,6 +356,21 @@ namespace APR.SimhubPlugins.Models {
         public double SetCameraCarTrackDistancePercent {
             set {
                 _CameraCarTrackDistancePercent = value;
+            }
+        }
+
+        public double LapDistPctToCameraCar {
+            get {
+                // calculate the difference between the two cars
+                var pctGap = _CameraCarTrackDistancePercent - TrackPositionPercent;
+                if (pctGap > 50.0) {
+                    pctGap -= 50.0;
+                }
+                else if (pctGap < -50.0) {
+                    pctGap += 50;
+                }
+
+                return pctGap;
             }
         }
 
@@ -492,6 +524,7 @@ namespace APR.SimhubPlugins.Models {
 
         public Driver(ref GameData data, ref DataSampleEx irData, _Drivers irDriver) {
             _irData = irData;
+            _data = data;
 
             // calculate the difference between the two cars
             _track = Track.FromSessionInfo(_irData.SessionData.WeekendInfo, _irData.SessionData.SplitTimeInfo);
