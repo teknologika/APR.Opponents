@@ -26,7 +26,8 @@ namespace APR.SimhubPlugins.Models {
         }
 
         public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
-
+        public int[] V8VetsLeagueIDs = {6455,10129,6788};
+        
         /* Stuff here is not used 
          * 
         public bool? PitRequested { get; set; }
@@ -135,26 +136,31 @@ namespace APR.SimhubPlugins.Models {
         public string Name { get; set; }
         public string NameRelativeColour {
             get {
-                 string RelativeTextRed = "#FFD05E55";
-                 string RelativeTextBlue = "#FF09D0D4";
-                 string RelativeTextWhite = "#FFECEDF4";
-                 string RelativeTextLightGrey = "#FF3F3C40";
-                 int cameraCarCurrentLap = _irData.Telemetry.CarIdxLap[_irData.Telemetry.CamCarIdx];
-
+                if (IsCameraCar) {
+                    return "#FFFFD700";
+                }
+                string RelativeTextRed = "#FFD05E55";
+                string RelativeTextBlue = "#FF09D0D4";
+                string RelativeTextWhite = "#FFECEDF4";
+                string RelativeTextLightGrey = "#FF3F3C40";
+                //int cameraCarCurrentLap = _irData.Telemetry.CarIdxLap[_irData.Telemetry.CamCarIdx];
+                var gap = TotalLapDistance - CameraCarTotalLapDistance+ _CameraCarTrackDistancePercent;
+                
                 if (IsInPitLane || IsInPitStall || IsInGarage || !IsConnected) {
                     return RelativeTextLightGrey;
                 }
 
                 if (_eventType == "Race") {
-                    if (CurrentLap > cameraCarCurrentLap) {
+                    if (gap > 1 ) {
                         return IsInPitLane ? RelativeTextLightGrey : RelativeTextRed; // Lapping you
                     }
-                    else if (CurrentLap == cameraCarCurrentLap) {
-                        return IsInPitLane ? RelativeTextLightGrey : RelativeTextWhite; // Same lap as you
-                    }
-                    else {
+                    else if (gap < 0) {
                         return IsInPitLane ? RelativeTextLightGrey : RelativeTextBlue; // Being lapped by you
                     }
+                    else {
+                        return IsInPitLane ? RelativeTextLightGrey : RelativeTextWhite; // Same lap as you
+                    }
+
                 }
                 else {
                     return RelativeTextWhite;
@@ -203,8 +209,13 @@ namespace APR.SimhubPlugins.Models {
         public bool IsSpectator { get; set; }
         public bool IsVetsPaceCar {
             get {
-                if (V8VetsSafetyCarNames.Contains(this.CarName)) {
-                    return true;
+                if (V8VetsLeagueIDs.Contains(_track.LeagueID)) { 
+                    if (V8VetsSafetyCarNames.Contains(this.CarName)) {
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
                 }
                 else {
                     return false;
@@ -239,27 +250,13 @@ namespace APR.SimhubPlugins.Models {
         public float EstTime {  get; set; }
         public float F2Time { get; set; }
         public int Gear { get; set; }
-        public float Speed { get; set; }
+        public double Speed { get; set; }
         public float RRM { get; set; }
         private SessionFlag _sessionFlags { get; set; }
 
         public int Position { get; set; }
         public int SimhubPosition { get; set; }
 
-        /*
-        public int SimhubPosition {
-            get {
-                var shOpponent = _data.NewData.Opponents.Find(x => x.Name == Name);
-                if (shOpponent == null) {
-                    return shOpponent.Position;
-                }
-                else {
-                    return -1;
-                }
-            }
-        }
-        */
-        
         public int LivePosition { get; set; }
 
         public int ClassPosition { get; set; }
@@ -303,6 +300,13 @@ namespace APR.SimhubPlugins.Models {
         internal double TotalLapDistance {          
             get {
                 var value = CurrentLap + TrackPositionPercent;
+                return value;
+            }
+        }
+
+        internal double CameraCarTotalLapDistance {
+            get {
+                var value = _cameraCarLap + _CameraCarTrackDistancePercent;
                 return value;
             }
         }
@@ -351,6 +355,19 @@ namespace APR.SimhubPlugins.Models {
                 }
             }
         }
+        private double _cameraCarLap = 0;
+        public double SetCameraCarLap {
+            set {
+                _cameraCarLap = value;
+            }
+        }
+
+        private double _SafetyCarTrackDistancePercent = 0;
+        public double SetSafetyCarTrackDistancePercent {
+            set {
+                _SafetyCarTrackDistancePercent = value;
+            }
+        }
 
         private double _CameraCarTrackDistancePercent = 0;
         public double SetCameraCarTrackDistancePercent {
@@ -389,18 +406,31 @@ namespace APR.SimhubPlugins.Models {
             }
         }
 
+        public double LapDistToSafetyCar {
+            get {
+
+                var distance = (_SafetyCarTrackDistancePercent * _track.Length) - (TrackPositionPercent * _track.Length);
+                if (distance > _track.Length / 2) {
+                    distance -= _track.Length;
+                }
+                else if (distance < -_track.Length / 2) {
+                    distance += _track.Length;
+                }
+
+                return distance;
+            }
+        }
+
         public double GapToCameraCarRaw {
             get {
                 return Math.Round(ClassReferenceLapTime.TotalSeconds / _track.Length * LapDistToCameraCar,2);
             }
         }
 
-   
-
         public string GapToCameraCar {
             get {
                 if (GapToCameraCarRaw == 0) {
-                    return "-.--";
+                    return "0.0";
                 }
                 else if (GapToCameraCarRaw > 0.0) {
                     return "+" + GapToCameraCarRaw.ToString("0.0");
@@ -453,8 +483,8 @@ namespace APR.SimhubPlugins.Models {
 
         public int LapsToLeader { get; set; }
         public int LapsToPositionAhead { get; set; }
-        public int? LapsToClassLeader { get; set; }
-        public int? LapsToPlayer { get; set; }
+        //public int? LapsToClassLeader { get; set; }
+        public int LapsToCameraCar { get; set; }
 
         // Flags
         public bool FlagRepair {
@@ -529,8 +559,7 @@ namespace APR.SimhubPlugins.Models {
             // calculate the difference between the two cars
             _track = Track.FromSessionInfo(_irData.SessionData.WeekendInfo, _irData.SessionData.SplitTimeInfo);
 
-            // these values come straight from the driver
-
+           
             // if we are the camera car push in extra fun stuff
             if (irData.Telemetry.CamCarIdx == irDriver.CarIdx) {
                 this.IsCameraCar = true;
@@ -590,10 +619,12 @@ namespace APR.SimhubPlugins.Models {
             // Calculate the distance between the CameraCar and the Driver
             // this is used for working out ahead / behind
             double cameraCarLapDistPct = (float)irData.Telemetry.CarIdxLapDistPct[irData.Telemetry.CamCarIdx];
+            double cameraCarCurrentLap = (long)irData.Telemetry.CarIdxLap[irData.Telemetry.CamCarIdx];
             Track track = Track.FromSessionInfo(irData.SessionData.WeekendInfo, irData.SessionData.SplitTimeInfo);
        
         
             this.SetCameraCarTrackDistancePercent = cameraCarLapDistPct;
+            this.SetCameraCarLap = cameraCarCurrentLap;
 
             this.IRating = irDriver.IRating;
             this.LicenceString = irDriver.LicString;
@@ -605,8 +636,64 @@ namespace APR.SimhubPlugins.Models {
             this.EstTime = (float)irData.Telemetry.CarIdxEstTime[irDriver.CarIdx];
             this.F2Time = (float)irData.Telemetry.CarIdxF2Time[irDriver.CarIdx];
             this.Gear = (int)irData.Telemetry.CarIdxGear[irDriver.CarIdx];
+            CalculateSpeed();
+        }
+
+        private double _prevSpeedUpdateTime;
+        private double _prevSpeedUpdateDist;
+        private const float SPEED_CALC_INTERVAL = 0.5f;
+
+        private void CalculateSpeed() {
+
+            if (_irData == null) return;
+            if (_track == null) return;
+
+            try {
+                var t1 = _irData.Telemetry.SessionTime;
+                var t0 = _prevSpeedUpdateTime;
+                var time = t1 - t0;
+                double speedMS = 0;
+
+                if (time < SPEED_CALC_INTERVAL) {
+                    // Ignore
+                    return;
+                }
+
+                var p1 = TrackPositionPercent;
+                var p0 = _prevSpeedUpdateDist;
+
+                if (p1 < -0.5 || !IsConnected) {
+                    // Not in world?
+                    return;
+                }
+
+                if (p0 - p1 > 0.5) {
+                    // Lap crossing
+                    p1 += 1;
+                }
+                var distancePct = p1 - p0;
+
+                var distance = distancePct * _track.Length * 1000; //meters
 
 
+                if (time >= Double.Epsilon) {
+                    speedMS = distance / (time); // m/s
+                }
+                else {
+                    if (distance < 0)
+                        speedMS = Double.NegativeInfinity;
+                    else
+                        speedMS = Double.PositiveInfinity;
+                }
+                this.Speed = speedMS * 3.6;
+
+                _prevSpeedUpdateTime = t1;
+                _prevSpeedUpdateDist = p1;
+            }
+            catch (Exception ex) {
+                //Log.Instance.LogError("Calculating speed of car " + this.Driver.Id, ex);
+                this.Speed = 0;
+            }
         }
 
         public string ParseColor(string value) {

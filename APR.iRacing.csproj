@@ -125,7 +125,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\Relatives.cs" />
     <Compile Include="Data\Session.cs" />
     <Compile Include="Models\CarClass.cs" />
     <Compile Include="Models\Driver.cs" />

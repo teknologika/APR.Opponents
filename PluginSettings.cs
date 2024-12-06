@@ -19,6 +19,10 @@ namespace APR.SimhubPlugins
         public bool RelativeShowCarsInPits { get; set; } = false;
         public bool OverrideJavaScriptFunctions { get; set; } = true;
 
+        public string[] V8VetsSafetyCarNames = { "BMW M4 GT4", "Mercedes AMG GT3", "McLaren 720S GT3 EVO" };
+        public int[] V8VetsLeagueIDs = { 6455, 10129, 6788 };
+
+
         #region Utility methods to refresh the UI see https://docs.microsoft.com/en-us/dotnet/api/system.componentmodel.inotifypropertychanged?view=netframework-4.7.2
 
         protected void OnPropertyChanged(string propertyName)

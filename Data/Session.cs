@@ -16,6 +16,7 @@ using System.Globalization;
 using System.Runtime;
 using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System.Drawing.Text;
+using GameReaderCommon.Replays;
 
 namespace APR.SimhubPlugins.Data {
     internal class Session : IDisposable  {
@@ -52,6 +53,12 @@ namespace APR.SimhubPlugins.Data {
             }
         }
 
+        public bool IsV8VetsSession {
+            get {
+                return Settings.V8VetsLeagueIDs.Contains(_track.LeagueID);
+            }
+        }
+
         DataSampleEx iRacingData;
         GameData data;
 
@@ -61,7 +68,6 @@ namespace APR.SimhubPlugins.Data {
         int LeaderLap = 0;
 
         _Drivers[] iRCompetitors;
-        _Drivers[] iRDrivers;
 
         public List<Driver> Drivers = new List<Driver>();
         private List<Driver> _driversAhead = new List<Driver>();
@@ -129,7 +135,44 @@ namespace APR.SimhubPlugins.Data {
         }
 
         public List<CarClass> CarClasses = new List<CarClass>();
-        public Relatives Relative = new Relatives();
+    
+        // Saftey car
+        public bool IsUnderSC { get; set; }
+        public bool IsSafetyCarMovingInPitane { get; set; }
+        
+        public long SafetyCarIdx;
+        public double SafetyCarTrackDistancePercent;
+        public double LapDistSafetyCar {
+            get {
+                var trackLengthM = _track.Length * 1000;
+                // calculate the difference between the two cars
+                var distance = (SafetyCarTrackDistancePercent * trackLengthM) - (CameraCar.TrackPositionPercent * trackLengthM);
+                if (distance > trackLengthM / 2) {
+                    distance -= trackLengthM;
+                }
+                else if (distance < -trackLengthM / 2) {
+                    distance += trackLengthM;
+                }
+                return distance;
+            }
+        }
+
+        public string LapDistSafetyCarString {
+            get {
+                if (LapDistSafetyCar > 0) {
+                    return LapDistSafetyCar.ToString("0") + "m AHEAD";
+                }
+                return Math.Abs(LapDistSafetyCar).ToString("0") + "m BEHIND";
+            }
+        }
+
+        public bool _FirstSCPeriodBreaksEarlySCRule;
+        public bool SafetyCarCountLock;
+
+       // public int _safetyCarPeriodCount;
+      //  public int SafetyCarPeriodCount() { return _safetyCarPeriodCount; }
+
+       
 
         internal void CheckAndAddCarClass(long CarClassID, string CarClassShortName, string CarClassColor, string CarClassTextColor) {
             bool has = this.CarClasses.Any(a => a.CarClassID == CarClassID);
@@ -160,7 +203,6 @@ namespace APR.SimhubPlugins.Data {
             CurrentSessionState = iRacingData.Telemetry.SessionState;
             CurrentSessionID = iRacingData.SessionData.WeekendInfo.SessionID;
             _track = Track.FromSessionInfo(iRacingData.SessionData.WeekendInfo,iRacingData.SessionData.SplitTimeInfo);
-          
 
         }
 
@@ -174,7 +216,6 @@ namespace APR.SimhubPlugins.Data {
             CameraCar = new Driver(ref data, ref iRacingData, iRCameraCar);
 
             iRCompetitors = iRacingData.SessionData.DriverInfo.CompetingDrivers;
-            iRDrivers = iRacingData.SessionData.DriverInfo.Drivers;
 
             // Update the car classes
             foreach (_Drivers competitor in iRCompetitors) {
@@ -197,12 +238,16 @@ namespace APR.SimhubPlugins.Data {
                 Driver classLeader = classbyPosition[0];
                 item.LeaderTotalTime = (classLeader.CurrentLap * item.ReferenceLapTime) + (item.ReferenceLapTime * classLeader.TrackPositionPercent);
             }
-
             CalculateLivePositions();
             CalculateSimhubPositions();
+
+            // Need to update the CameraCar
+            CameraCar.SimhubPosition = Drivers.Find(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx).SimhubPosition;
+
             UpdateLeaderTimeDelta(ref Drivers, ref CarClasses, ref Leader);
             UpdateCarAheadTimeDelta(ref Drivers, ref CarClasses);
-            Relative.Update(ref iRacingData, ref CarClasses, ref Drivers, CameraCar);
+
+
         }
 
         private void CalculateSimhubPositions() {
@@ -225,7 +270,6 @@ namespace APR.SimhubPlugins.Data {
                 Drivers.Find(x => x.CarIdx == simhubSortList[i].CarIdx).SimhubPosition = i+1;
             }
 
-            var bob = Drivers.OrderBy(x => x.SimhubPosition).ToList();
         }
 
         private void CalculateLivePositions() {
@@ -278,6 +322,37 @@ namespace APR.SimhubPlugins.Data {
                 LeaderLap = Leader.LapsComplete + 1;
         }
 
+        public void CheckIfUnderSafetyCar() {
+            IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
+            if (IsV8VetsSession) {
+                foreach (var item in Drivers) {
+                    if (item.IsVetsPaceCar && SessionType == "Race") {
+                        if (!item.IsInPitLane && item.Speed > 0.01f) { // SC is on track
+                            SafetyCarIdx = item.CarIdx;
+                            SafetyCarTrackDistancePercent = item.TrackPositionPercent;
+
+                            IsUnderSC = true;
+                            IsSafetyCarMovingInPitane = false;
+                        }
+                        if (item.IsInPitLane && item.Speed > 0.01f) { // We are in pit lane and moving 
+                            IsUnderSC = true;
+                            IsSafetyCarMovingInPitane = true;
+                            SafetyCarTrackDistancePercent = item.TrackPositionPercent;
+                        }
+                    }
+                }
+            }
+            else {
+                IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
+                if (IsUnderSC) {
+                    // The iracing SC is CarIdx 0
+                    SafetyCarIdx = 0;
+                    SafetyCarTrackDistancePercent = (float)iRacingData.Telemetry.CarIdxLapDistPct[0];
+                }
+                IsSafetyCarMovingInPitane = false;
+            }
+        }
+
         // Matches simhub getplayerleaderboardposition()
         // But we return cameracar Idx not the player :-)
         public int GetPlayerLeaderboardPosition() {
@@ -322,10 +397,7 @@ namespace APR.SimhubPlugins.Data {
                     sortedDrivers[i].SetGapToPositionAhead = value;
                 }
             }
-
-
         }
-
 
         protected virtual void Dispose(bool disposing) {
         }

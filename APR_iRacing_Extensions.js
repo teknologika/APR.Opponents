@@ -89,37 +89,20 @@ getplayerleaderboardposition = (function (originalFunction) {
     };
 })(getplayerleaderboardposition);
 
-// Returns the leaderboard position of the player's ahead/behind on track opponents
-// relativeIndex 0 is the camera car, -1 the first driver ahead, 1 the first driver behind
+
+// Returns the leaderboard position of the player's ahead/behind position
+// relativeIndex 0 is the camera car, -1 is one position ahead, 1 one position behind behind
 // this function assumes the override check has already been performed
-function apr_getopponentleaderboardposition_aheadbehind_old(relativeIndex) {
-    var value = -1;
-    if (relativeIndex < 0)
-        index = '-' + (Math.abs(relativeIndex) ?? '00').toString().padStart(2, '0');
-    else
-        index = (relativeIndex ?? '00').toString().padStart(2, '0');
-
-    if (relativeIndex < 0) {
-        value = $prop('APRiRacing.Driver_Ahead_' + index + '_LeaderboardPosition');
-        //value = 'APRiRacing.Driver_Ahead_' + (relativeIndex ?? '00').toString().padStart(2, '0') + '_LeaderboardPosition';
+function getopponentleaderboardposition_positionaheadbehind(relativeIndex) {
+    var positon = getplayerleaderboardposition();
+    if (positon != null) {
+        return positon + relativeIndex;
     }
-    else if (relativeIndex > 0) {
-        value = $prop('APRiRacing.Driver_Behind_' + index + '_LeaderboardPosition');
-    }
-    else if (relativeIndex == 0) {
-        value = getplayerleaderboardposition();
-    }
-    if (value == null) {
-        return -1;
-    }
-    else if (value == 0) {
-        return;
-    }
-
     else {
-        return value;
+        return positon;
     }
 }
+
 
 // Returns the leaderboard position of the player's ahead/behind on track opponents
 // relativeIndex 0 is the camera car, -1 the first driver ahead, 1 the first driver behind

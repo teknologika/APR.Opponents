@@ -22,6 +22,7 @@ namespace APR.SimhubPlugins.Models {
         public string ConfigName { get; set; }
         public double Length { get; set; }
         public bool NightMode { get; set; }
+        public int LeagueID { get; set; }
 
         public List<Sector> Sectors {
             get { return _sectors; }
@@ -37,6 +38,7 @@ namespace APR.SimhubPlugins.Models {
             track.ConfigName = info.TrackConfigName;
             track.Length = Track.ParseTrackLength(info.TrackLength);
             track.NightMode = info.WeekendOptions.NightMode == "1";
+            track.LeagueID = (int)info.LeagueID;
 
             // Parse sectors
             track.Sectors.Clear();

@@ -143,6 +143,7 @@ namespace APR.SimhubPlugins {
                             //if (runEvery1Sec) {
                                 if (data.NewData.SessionTimeLeft.TotalSeconds > 0) {
                                     Session.GetGameDataEverySecond();
+                                    Session.CheckIfUnderSafetyCar();
                                     SetProperties(Session);
 
                                     if (Settings.ShowDebug) {
@@ -302,6 +303,12 @@ namespace APR.SimhubPlugins {
 
             this.AttachDelegate("GetPlayerLeaderboardPosition", () => Session.GetPlayerLeaderboardPosition());
             this.AttachDelegate("GetPlayerClassLeaderboardPosition", () => Session.GetPlayerClassLeaderboardPosition());
+
+            AddSetProp("Session.UnderSC", Session.IsUnderSC);
+            AddSetProp("Session.SCMovingInPitlane", Session.IsSafetyCarMovingInPitane);
+            AddSetProp("Session.DistanceToSC", Session.LapDistSafetyCarString);
+            //AddSetProp("Session.SCPeriodCount", Session.SafetyCarPeriodCount);
+
             ClearRelativeProperties();
 
             // Properties sorted by Position
