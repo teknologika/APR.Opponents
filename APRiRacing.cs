@@ -84,6 +84,31 @@ namespace APR.SimhubPlugins {
             }
         }
 
+ 
+
+        public void PrivateChatCarBehindAction(string Text) {
+            if (Session.DriverBehindId != string.Empty) {
+                Text = "/" + Session.DriverBehindId + " " + Text;
+                RadioAndTextChat.iRacingChat(Text, false);
+            }
+        }
+
+        public void PrivateChatCarAheadAction(string Text) {
+            if (Session.DriverAheadId != string.Empty) {
+                Text = "/" + Session.DriverAheadId + " " + Text;
+                RadioAndTextChat.iRacingChat(Text, false);
+            }
+        }
+
+        public void PitFourTyresPlusFuel(double fuel) {
+            string fuelString = fuel.ToString();
+            string text = $"#clear;#t;#fuel {fuelString}l";
+        }
+
+        public void IRacingPitChat(string Text) {
+            RadioAndTextChat.iRacingChat(Text);
+        }
+
         public void DataUpdate(PluginManager pluginManager, ref GameData data) {
             // Use a frame counter to not update everything every frame
             // Simhub  runs this loop runs 60x per second
@@ -240,8 +265,29 @@ namespace APR.SimhubPlugins {
             });
 
             AddProperties();
-        }
 
+            // Adding buttons
+            // Opponent chat buttons
+            if (Settings.EnableOpponentPrivateChat) {
+
+                pluginManager.AddAction("Chat.Ahead.BlueFlags", this.GetType(), (Action<PluginManager, string>)((a, b) => {
+                    PrivateChatCarAheadAction("Can I pass please " + Session.DriverAheadName + "?");
+                }));
+
+                pluginManager.AddAction("Chat.Behind.PittingIn", this.GetType(), (Action<PluginManager, string>)((a, b) => {
+                    PrivateChatCarAheadAction("I'm pitting " + Session.DriverBehindName + ".");
+                }));
+
+                pluginManager.AddAction("Chat.Behind.Thanks", this.GetType(), (Action<PluginManager, string>)((a, b) => {
+                    PrivateChatCarAheadAction("Thanks, " + Session.DriverBehindName + "!!");
+                }));
+
+                // Strategy Buttons
+                pluginManager.AddAction("Chat.Behind.Thanks", this.GetType(), (Action<PluginManager, string>)((a, b) => {
+                    PrivateChatCarAheadAction("Thanks, " + Session.DriverBehindName + "!!");
+                }));
+            }
+        }
 
         private void OnSessionChange(PluginManager pluginManager) {
             if (Session != null) {

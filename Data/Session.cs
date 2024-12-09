@@ -32,7 +32,14 @@ namespace APR.SimhubPlugins.Data {
         public string EventType;
         public string SessionType { get { return EventType; } }
 
-       // private TimeDelta _timeDelta;
+        // This is used for sending messages
+        public string DriverAheadId = string.Empty;
+        public string DriverAheadName = string.Empty;
+        public string DriverBehindId = string.Empty;
+        public string DriverBehindName = string.Empty;
+
+
+        // private TimeDelta _timeDelta;
         private Track _track;
 
 
@@ -93,6 +100,22 @@ namespace APR.SimhubPlugins.Data {
                         a.IsConnected)
                         .OrderByDescending(a => a.LapDistToCameraCar).ToList();
                 }
+
+                // this is used for sending messages
+                if (_driversAhead.Count > 0) {
+                    if (_driversAhead[0].GapToCameraCarRaw < 1.0) {
+                        this.DriverAheadId = _driversAhead[0].CarNumber;
+                        this.DriverAheadName = _driversAhead[0].Name;
+                    }
+                    else {
+                        this.DriverAheadId = string.Empty;
+                        this.DriverAheadName = string.Empty;
+                    }
+                }
+                else {
+                    this.DriverAheadId = string.Empty;
+                    this.DriverAheadName = string.Empty;
+                }
                 return _driversAhead;
             }
         }
@@ -130,6 +153,22 @@ namespace APR.SimhubPlugins.Data {
                         a.IsConnected)
                         .OrderBy(a => a.LapDistToCameraCar).ToList();
                 }
+
+                if (_driversBehind.Count > 0) {
+                    if (_driversBehind[0].GapToCameraCarRaw < 1.0) {
+                        this.DriverBehindId = _driversBehind[0].CarNumber;
+                        this.DriverBehindName = _driversBehind[0].Name;
+                    }
+                    else {
+                        this.DriverBehindId = string.Empty;
+                        this.DriverBehindName = string.Empty;
+                    }
+                }
+                else {
+                    this.DriverBehindId = string.Empty;
+                    this.DriverBehindName = string.Empty;
+                }
+
                 return _driversBehind;
             }
         }
@@ -323,32 +362,38 @@ namespace APR.SimhubPlugins.Data {
         }
 
         public void CheckIfUnderSafetyCar() {
-            IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
-            if (IsV8VetsSession) {
-                foreach (var item in Drivers) {
-                    if (item.IsVetsPaceCar && SessionType == "Race") {
-                        if (!item.IsInPitLane && item.Speed > 0.01f) { // SC is on track
-                            SafetyCarIdx = item.CarIdx;
-                            SafetyCarTrackDistancePercent = item.TrackPositionPercent;
+            if (SessionType == "Race") {
+                IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
+                if (IsV8VetsSession) {
+                    foreach (var item in Drivers) {
+                        if (item.IsVetsPaceCar && SessionType == "Race") {
+                            if (!item.IsInPitLane && item.Speed > 0.01f) { // SC is on track
+                                SafetyCarIdx = item.CarIdx;
+                                SafetyCarTrackDistancePercent = item.TrackPositionPercent;
 
-                            IsUnderSC = true;
-                            IsSafetyCarMovingInPitane = false;
-                        }
-                        if (item.IsInPitLane && item.Speed > 0.01f) { // We are in pit lane and moving 
-                            IsUnderSC = true;
-                            IsSafetyCarMovingInPitane = true;
-                            SafetyCarTrackDistancePercent = item.TrackPositionPercent;
+                                IsUnderSC = true;
+                                IsSafetyCarMovingInPitane = false;
+                            }
+                            if (item.IsInPitLane && item.Speed > 0.01f) { // We are in pit lane and moving 
+                                IsUnderSC = true;
+                                IsSafetyCarMovingInPitane = true;
+                                SafetyCarTrackDistancePercent = item.TrackPositionPercent;
+                            }
                         }
                     }
                 }
+                else {
+                    IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
+                    if (IsUnderSC && !CameraCar.IsPlayer && !(CameraCar.CarIdx == 0)) {
+                        // The iracing SC is CarIdx 0
+                        SafetyCarIdx = 0;
+                        SafetyCarTrackDistancePercent = (float)iRacingData.Telemetry.CarIdxLapDistPct[0];
+                    }
+                    IsSafetyCarMovingInPitane = false;
+                }
             }
             else {
-                IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
-                if (IsUnderSC) {
-                    // The iracing SC is CarIdx 0
-                    SafetyCarIdx = 0;
-                    SafetyCarTrackDistancePercent = (float)iRacingData.Telemetry.CarIdxLapDistPct[0];
-                }
+                IsUnderSC = false;
                 IsSafetyCarMovingInPitane = false;
             }
         }
