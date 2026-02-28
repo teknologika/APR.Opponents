@@ -11,7 +11,6 @@ namespace APR.SimhubPlugins
     public class PluginSettings : INotifyPropertyChanged 
     {
         public bool SettingsUpdated { get; set; } = false;
-
         public bool ShowDebug { get; set; } = false;
         public double LowFuelWarningLevel = 5.0;
         public int MAX_CARS = 64;

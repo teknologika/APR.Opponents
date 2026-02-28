@@ -26,7 +26,7 @@ namespace APR.SimhubPlugins {
         private const int SW_SHOWMAXIMIZED = 3;
 
         public static void iRacingChat(string text) {
-            if (string.IsNullOrEmpty(text)) {
+            if (!string.IsNullOrEmpty(text)) {
                 iRacingChat(text, false);
             }
         }

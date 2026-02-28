@@ -56,7 +56,7 @@
       <HintPath>$(SIMHUB_INSTALL_PATH)\AvalonDock.Themes.VS2013.dll</HintPath>
     </Reference>
     <Reference Include="GameReaderCommon">
-      <HintPath>$(SIMHUB_INSTALL_PATH)GameReaderCommon.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SimHub\GameReaderCommon.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="GongSolutions.WPF.DragDrop">
@@ -77,13 +77,16 @@
     </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(SIMHUB_INSTALL_PATH)log4net.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SimHub\log4net.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="MahApps.Metro, Version=1.5.0.23, Culture=neutral, PublicKeyToken=f4fb5a3c4d1e5b4f, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(SIMHUB_INSTALL_PATH)MahApps.Metro.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SimHub\MahApps.Metro.dll</HintPath>
       <Private>False</Private>
+    </Reference>
+    <Reference Include="MahApps.Metro.IconPacks">
+      <HintPath>..\..\..\..\..\Program Files (x86)\SimHub\MahApps.Metro.IconPacks.dll</HintPath>
     </Reference>
     <Reference Include="MahApps.Metro.IconPacks.Core">
       <HintPath>$(SIMHUB_INSTALL_PATH)MahApps.Metro.IconPacks.Core.dll</HintPath>
@@ -122,11 +125,11 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="SimHub.Logging, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(SIMHUB_INSTALL_PATH)SimHub.Logging.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SimHub\SimHub.Logging.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SimHub.Plugins">
-      <HintPath>$(SIMHUB_INSTALL_PATH)SimHub.Plugins.dll</HintPath>
+      <HintPath>..\..\..\..\..\Program Files (x86)\SimHub\SimHub.Plugins.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -218,6 +221,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\..\..\..\..\Program Files %28x86%29\SimHub\GameReaderCommon.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

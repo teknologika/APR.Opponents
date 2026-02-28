@@ -84,8 +84,6 @@ namespace APR.SimhubPlugins {
             }
         }
 
- 
-
         public void PrivateChatCarBehindAction(string Text) {
             if (Session.DriverBehindId != string.Empty) {
                 Text = "/" + Session.DriverBehindId + " " + Text;

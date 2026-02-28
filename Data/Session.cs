@@ -17,6 +17,7 @@ using System.Runtime;
 using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using System.Drawing.Text;
 using GameReaderCommon.Replays;
+using System.Diagnostics.Eventing.Reader;
 
 namespace APR.SimhubPlugins.Data {
     internal class Session : IDisposable  {
@@ -30,7 +31,7 @@ namespace APR.SimhubPlugins.Data {
         public double PreviousSessionTick;
 
         public string EventType;
-        public string SessionType { get { return EventType; } }
+        public string SessionType;
 
         // This is used for sending messages
         public string DriverAheadId = string.Empty;
@@ -239,6 +240,9 @@ namespace APR.SimhubPlugins.Data {
             // Get the iRacing Session Details
             SessionTime = iRacingData.Telemetry.SessionTime;
             EventType = iRacingData.SessionData.WeekendInfo.EventType;
+            var sessionNumber = iRacingData.Telemetry.SessionNum;
+            SessionType = iRacingData.SessionData.SessionInfo.Sessions[sessionNumber].SessionType;
+
             CurrentSessionState = iRacingData.Telemetry.SessionState;
             CurrentSessionID = iRacingData.SessionData.WeekendInfo.SessionID;
             _track = Track.FromSessionInfo(iRacingData.SessionData.WeekendInfo,iRacingData.SessionData.SplitTimeInfo);
@@ -281,8 +285,12 @@ namespace APR.SimhubPlugins.Data {
             CalculateSimhubPositions();
 
             // Need to update the CameraCar
-            CameraCar.SimhubPosition = Drivers.Find(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx).SimhubPosition;
-
+            if (CameraCar.IsIRPaceCar) {
+                CameraCar.SimhubPosition = 0;
+            }
+            else {
+                CameraCar.SimhubPosition = Drivers.Find(x => x.CarIdx == iRacingData.Telemetry.CamCarIdx).SimhubPosition;
+            }
             UpdateLeaderTimeDelta(ref Drivers, ref CarClasses, ref Leader);
             UpdateCarAheadTimeDelta(ref Drivers, ref CarClasses);
 
@@ -362,34 +370,37 @@ namespace APR.SimhubPlugins.Data {
         }
 
         public void CheckIfUnderSafetyCar() {
+           
             if (SessionType == "Race") {
-                IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
-                if (IsV8VetsSession) {
+                if (IsV8VetsSession) { 
                     foreach (var item in Drivers) {
-                        if (item.IsVetsPaceCar && SessionType == "Race") {
-                            if (!item.IsInPitLane && item.Speed > 0.01f) { // SC is on track
-                                SafetyCarIdx = item.CarIdx;
-                                SafetyCarTrackDistancePercent = item.TrackPositionPercent;
-
+                        if (item.IsVetsPaceCar && item.Speed > 0.01f ) {
+                            SafetyCarIdx = item.CarIdx;
+                            SafetyCarTrackDistancePercent = item.TrackPositionPercent;
+                            if (!item.IsInPitLane ) { // SC is on track
                                 IsUnderSC = true;
                                 IsSafetyCarMovingInPitane = false;
                             }
-                            if (item.IsInPitLane && item.Speed > 0.01f) { // We are in pit lane and moving 
+                            else { // We are in pit lane and moving 
                                 IsUnderSC = true;
                                 IsSafetyCarMovingInPitane = true;
-                                SafetyCarTrackDistancePercent = item.TrackPositionPercent;
                             }
+                        }
+                        else {
+                            IsUnderSC = false;
+                            IsSafetyCarMovingInPitane = false;
                         }
                     }
                 }
                 else {
-                    IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
-                    if (IsUnderSC && !CameraCar.IsPlayer && !(CameraCar.CarIdx == 0)) {
-                        // The iracing SC is CarIdx 0
-                        SafetyCarIdx = 0;
-                        SafetyCarTrackDistancePercent = (float)iRacingData.Telemetry.CarIdxLapDistPct[0];
-                    }
-                    IsSafetyCarMovingInPitane = false;
+                    IsUnderSC = false;
+                    //IsUnderSC = iRacingData.Telemetry.UnderPaceCar;
+                    //if (IsUnderSC && !CameraCar.IsPlayer && !(CameraCar.CarIdx == 0)) {
+                    //    //The iracing SC is CarIdx 0
+                    //    SafetyCarIdx = 0;
+                    //    SafetyCarTrackDistancePercent = (float)iRacingData.Telemetry.CarIdxLapDistPct[0];
+                    //}
+                    //IsSafetyCarMovingInPitane = false;
                 }
             }
             else {

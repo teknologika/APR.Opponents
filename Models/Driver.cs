@@ -222,17 +222,15 @@ namespace APR.SimhubPlugins.Models {
                 }
             }
         }
-
-        public bool IsIRPaceCar {
-            get {
-                if (CustId == -1 && CarIdx == 0) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
+        private void SetIsIRPaceCar(long value) {
+            if (value == 1) {
+                IsIRPaceCar = true;
             }
+            else
+                IsIRPaceCar = false;
         }
+
+        public bool IsIRPaceCar { get; set; }
 
         public bool IsPaceCar {
             get {
@@ -253,6 +251,7 @@ namespace APR.SimhubPlugins.Models {
         public double Speed { get; set; }
         public float RRM { get; set; }
         private SessionFlag _sessionFlags { get; set; }
+      
 
         public int Position { get; set; }
         public int SimhubPosition { get; set; }
@@ -613,6 +612,7 @@ namespace APR.SimhubPlugins.Models {
             // Get the session flags for the driver and share in properties
             int[] flags = (int[])irData.Telemetry.FirstOrDefault(x => x.Key == "CarIdxSessionFlags").Value;
             this._sessionFlags = new SessionFlag(flags[CarIdx]);
+            
 
             this.TrackPositionPercent = (float)irData.Telemetry.CarIdxLapDistPct[irDriver.CarIdx];
             
@@ -636,6 +636,7 @@ namespace APR.SimhubPlugins.Models {
             this.EstTime = (float)irData.Telemetry.CarIdxEstTime[irDriver.CarIdx];
             this.F2Time = (float)irData.Telemetry.CarIdxF2Time[irDriver.CarIdx];
             this.Gear = (int)irData.Telemetry.CarIdxGear[irDriver.CarIdx];
+            this.SetIsIRPaceCar(irDriver.CarIsPaceCar);
             CalculateSpeed();
         }
 
